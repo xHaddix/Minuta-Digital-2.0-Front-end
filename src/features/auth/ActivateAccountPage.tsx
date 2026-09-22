@@ -13,11 +13,15 @@ interface ActivationResponse {
 export function ActivateAccountPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading",
-  );
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
   const [message, setMessage] = useState(
-    "Validando tu enlace seguro de activación...",
+    "Define tu nueva contraseña para activar tu cuenta y continuar con seguridad.",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,60 +32,84 @@ export function ActivateAccountPage() {
   );
 
   useEffect(() => {
-    let isMounted = true;
-
-    const validateAccount = async () => {
-      if (!token) {
-        if (isMounted) {
-          setStatus("error");
-          setMessage(
-            "El enlace de activación no incluye un token válido. Solicita uno nuevo desde la opción de registro o recuperación.",
-          );
-        }
-        return;
-      }
-
-      try {
-        const { data } = await api.post<ActivationResponse>(
-          AUTH_ENDPOINTS.activate,
-          {
-            token,
-          },
-        );
-
-        if (isMounted) {
-          setStatus("success");
-          setMessage(
-            data.message ||
-              "Tu cuenta ha sido activada correctamente. Ya puedes iniciar sesión de forma segura.",
-          );
-        }
-      } catch (error: unknown) {
-        if (!isMounted) return;
-
-        const responseMessage =
-          typeof error === "object" && error !== null && "response" in error
-            ? (error as { response?: { data?: { message?: string } } }).response
-                ?.data?.message
-            : undefined;
-
-        setStatus("error");
-        setMessage(
-          responseMessage ||
-            "Este enlace ya expiró, es inválido o fue usado previamente. Solicita una nueva activación.",
-        );
-      }
-    };
-
-    void validateAccount();
-
-    return () => {
-      isMounted = false;
-    };
+    if (!token) {
+      setStatus("error");
+      setMessage(
+        "El enlace de activación no incluye un token válido. Solicita uno nuevo desde la opción de registro o recuperación.",
+      );
+    }
   }, [token]);
 
   const handleReturnToLogin = () => {
     navigate("/login", { replace: true });
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!token) {
+      setStatus("error");
+      setMessage(
+        "No se encontró un token válido para completar la activación.",
+      );
+      return;
+    }
+
+    if (password.length < 8) {
+      setStatus("error");
+      setMessage("La contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+
+    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setStatus("error");
+      setMessage(
+        "Usa al menos una mayúscula y un número para fortalecer la contraseña.",
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setStatus("error");
+      setMessage("Las contraseñas no coinciden. Verifica ambos campos.");
+      return;
+    }
+
+    setStatus("loading");
+    setIsSubmitting(true);
+    setMessage("Activando tu cuenta y guardando la nueva contraseña...");
+
+    try {
+      const { data } = await api.post<ActivationResponse>(
+        AUTH_ENDPOINTS.activate,
+        {
+          token,
+          password,
+        },
+      );
+
+      setStatus("success");
+      setMessage(
+        data.message ||
+          "Tu cuenta ha sido activada correctamente. Ya puedes iniciar sesión de forma segura.",
+      );
+      setPassword("");
+      setConfirmPassword("");
+    } catch (error: unknown) {
+      const responseMessage =
+        typeof error === "object" && error !== null && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response
+              ?.data?.message
+          : undefined;
+
+      setStatus("error");
+      setMessage(
+        responseMessage ||
+          "Este enlace ya expiró, es inválido o fue usado previamente. Solicita una nueva activación.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRequestNewActivation = async () => {
@@ -157,47 +185,99 @@ export function ActivateAccountPage() {
               ? "Cuenta activada"
               : status === "error"
                 ? "No se pudo activar"
-                : "Verificando enlace"}
+                : "Activación segura"}
           </h2>
 
           <p className="login-center-subtitle">{message}</p>
 
-          <div className="login-center-form">
+          <form onSubmit={handleSubmit} className="login-center-form">
+            {status !== "success" ? (
+              <>
+                <div className="login-field login-password-field">
+                  <span className="login-field-icon">◌</span>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Nueva contraseña"
+                    aria-label="Nueva contraseña"
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="button"
+                    className="login-password-toggle"
+                    aria-label={
+                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                    }
+                    onClick={() => setShowPassword((current) => !current)}
+                  >
+                    {showPassword ? "◉" : "◌"}
+                  </button>
+                </div>
+
+                <div className="login-field login-password-field">
+                  <span className="login-field-icon">◌</span>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    placeholder="Confirmar contraseña"
+                    aria-label="Confirmar contraseña"
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="button"
+                    className="login-password-toggle"
+                    aria-label={
+                      showConfirmPassword
+                        ? "Ocultar contraseña"
+                        : "Mostrar contraseña"
+                    }
+                    onClick={() =>
+                      setShowConfirmPassword((current) => !current)
+                    }
+                  >
+                    {showConfirmPassword ? "◉" : "◌"}
+                  </button>
+                </div>
+              </>
+            ) : null}
+
             {status === "success" ? (
               <FormFeedback variant="success">
                 Tu acceso ya está listo. Puedes continuar e iniciar sesión con
                 tus credenciales.
               </FormFeedback>
             ) : status === "error" ? (
-              <FormFeedback variant="error">
-                El enlace no es válido o ya fue utilizado. Solicita una nueva
-                activación para continuar con seguridad.
-              </FormFeedback>
+              <FormFeedback variant="error">{message}</FormFeedback>
             ) : (
               <FormFeedback variant="info">
-                Estamos validando la firma del enlace y el estado de la cuenta.
+                Tu contraseña debe tener mínimo 8 caracteres, incluir al menos
+                una mayúscula y un número.
               </FormFeedback>
             )}
 
-            <div className="activation-actions">
+            {status !== "success" ? (
+              <AnimatedButton type="submit" loading={isSubmitting}>
+                Activar cuenta
+              </AnimatedButton>
+            ) : (
               <AnimatedButton type="button" onClick={handleReturnToLogin}>
                 Ir al inicio de sesión
               </AnimatedButton>
+            )}
 
-              {status === "error" ? (
-                <button
-                  type="button"
-                  className="login-link-button"
-                  onClick={handleRequestNewActivation}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting
-                    ? "Solicitando..."
-                    : "Solicitar nueva activación"}
-                </button>
-              ) : null}
-            </div>
-          </div>
+            {status === "error" ? (
+              <button
+                type="button"
+                className="login-link-button"
+                onClick={handleRequestNewActivation}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Solicitando..." : "Solicitar nueva activación"}
+              </button>
+            ) : null}
+          </form>
         </section>
       </div>
     </div>
