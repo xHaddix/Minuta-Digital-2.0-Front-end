@@ -3,6 +3,7 @@ import { Building2, Mail } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../services/api";
+import { AUTH_ENDPOINTS } from "../../config/app";
 import { AnimatedButton } from "../../components/ui/AnimatedButton";
 import { FormFeedback } from "../../components/ui/FormFeedback";
 
@@ -35,41 +36,17 @@ export function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const candidateEndpoints = [
-        "/auth/forgot-password",
-        "/auth/request-password-reset",
-        "/auth/recover-password",
-        "/auth/reset-password",
-      ];
+      const { data } = await api.post(AUTH_ENDPOINTS.forgotPassword, {
+        email: trimmedEmail,
+      });
 
-      let lastError: unknown;
+      const successMessage =
+        typeof data?.message === "string"
+          ? data.message
+          : "Si existe una cuenta asociada a este correo, te enviaremos un enlace de recuperación.";
 
-      for (const endpoint of candidateEndpoints) {
-        try {
-          const { data } = await api.post(endpoint, {
-            email: trimmedEmail,
-          });
-
-          const successMessage =
-            typeof data?.message === "string"
-              ? data.message
-              : "Si existe una cuenta asociada a este correo, te enviaremos un enlace de recuperación.";
-
-          setSuccess(successMessage);
-          setTimeout(() => navigate("/login", { replace: true }), 1600);
-          return;
-        } catch (requestError) {
-          lastError = requestError;
-          if (
-            !axios.isAxiosError(requestError) ||
-            requestError.response?.status !== 404
-          ) {
-            throw requestError;
-          }
-        }
-      }
-
-      throw lastError ?? new Error("No se pudo enviar la solicitud.");
+      setSuccess(successMessage);
+      setTimeout(() => navigate("/login", { replace: true }), 1600);
     } catch (requestError) {
       const responseMessage = axios.isAxiosError(requestError)
         ? requestError.response?.data?.message

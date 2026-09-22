@@ -575,6 +575,16 @@
   font-size: 1rem;
 }
 
+.activation-actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.activation-actions .login-link-button {
+  justify-self: center;
+}
+
 @media (max-width: 900px) {
   .login-grid {
     grid-template-columns: 1fr;
