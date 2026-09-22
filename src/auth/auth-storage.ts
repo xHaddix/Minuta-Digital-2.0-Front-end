@@ -1,6 +1,12 @@
 import { APP_CONFIG } from "../config/app";
 import type { AuthState } from "../types/auth";
 
+const AUTH_CHANGED_EVENT = "minuta-digital-auth-changed";
+
+const notifyAuthChanged = () => {
+  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+};
+
 export const getStoredAuth = (): AuthState | null => {
   try {
     const raw = localStorage.getItem(APP_CONFIG.AUTH_STORAGE_KEY);
@@ -12,10 +18,12 @@ export const getStoredAuth = (): AuthState | null => {
 
 export const setStoredAuth = (auth: AuthState) => {
   localStorage.setItem(APP_CONFIG.AUTH_STORAGE_KEY, JSON.stringify(auth));
+  notifyAuthChanged();
 };
 
 export const clearStoredAuth = () => {
   localStorage.removeItem(APP_CONFIG.AUTH_STORAGE_KEY);
+  notifyAuthChanged();
 };
 
 export const buildAuthState = (payload: {

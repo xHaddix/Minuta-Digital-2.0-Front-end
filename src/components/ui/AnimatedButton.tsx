@@ -19,6 +19,7 @@ export function AnimatedButton({
   const classes = [
     "ui-animated-button",
     `ui-animated-button--${variant}`,
+    "session-action-button",
     className,
   ]
     .filter(Boolean)

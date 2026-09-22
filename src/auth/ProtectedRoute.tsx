@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./useAuth";
+import { ContextSelectorModal } from "./ContextSelectorModal";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -8,21 +9,25 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
-  const { isAuthenticated, hasActiveComplex } = useAuth();
+  const { isAuthenticated, hasActiveComplex, session } = useAuth();
+  const roleCode = session?.user?.roleCode ?? null;
 
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   if (!hasActiveComplex()) {
+    if (roleCode === "ROLE_DEV" || roleCode === "ROLE_ORG_ADMIN") {
+      return <ContextSelectorModal />;
+    }
+
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
-        <div className="max-w-lg rounded-2xl border border-amber-200 bg-white p-8 text-center shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
-            Debe seleccionar un conjunto residencial activo
-          </h2>
-          <p className="mt-3 text-sm text-slate-600">
-            Debe seleccionar un conjunto residencial activo para operar.
+      <div className="context-required-state">
+        <div className="context-required-card">
+          <h2>Debe seleccionar un conjunto residencial activo</h2>
+          <p>
+            Tu perfil requiere un contexto de conjunto activo para operar con la
+            plataforma.
           </p>
         </div>
       </div>

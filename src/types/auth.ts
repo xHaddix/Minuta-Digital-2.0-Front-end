@@ -42,8 +42,25 @@ export interface UserSession {
 
 export interface LoginResponse {
   accessToken: string;
-  user: UserSession;
-  permissions: PermissionCode[];
+  user: UserSession & {
+    roleName?: string;
+    organizationId?: string | null;
+    residentialComplexId?: string | null;
+  };
+  permissions?: PermissionCode[];
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  status?: string;
+}
+
+export interface ResidentialComplex {
+  id: string;
+  name: string;
+  organizationId?: string | null;
+  status?: string;
 }
 
 export interface JwtPayload {
@@ -70,7 +87,12 @@ export interface SwitchComplexRequest {
 
 export interface SwitchComplexResponse {
   accessToken: string;
-  permissions: PermissionCode[];
+  permissions?: PermissionCode[];
+  user?: UserSession & {
+    roleName?: string;
+    organizationId?: string | null;
+    residentialComplexId?: string | null;
+  };
 }
 
 export interface ValidationErrorResponse {
@@ -86,6 +108,7 @@ export interface Visitor {
   status: "active" | "closed";
   createdAt: string;
 }
+
 export interface UserRecord {
   id: string;
   email: string;
@@ -93,4 +116,40 @@ export interface UserRecord {
   roleCode: RoleCode;
   organizationId?: string | null;
   residentialComplexId?: string | null;
+}
+
+export interface UserListItem {
+  id: string;
+  name: string;
+  email: string;
+  roleCode: RoleCode;
+  organizationId?: string | null;
+  residentialComplexId?: string | null;
+}
+
+export interface VisitorListItem {
+  id: string;
+  fullName: string;
+  documentNumber?: string;
+  unitNumber?: string;
+  unitTarget?: string;
+  entryTime?: string | null;
+  exitTime?: string | null;
+  status?: "active" | "closed";
+  createdAt?: string;
+  authorizerUser?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+}
+
+export interface UserListItem {
+  id: string;
+  name: string;
+  email: string;
+  roleCode: RoleCode;
+  organizationId?: string | null;
+  residentialComplexId?: string | null;
+  status?: string;
 }

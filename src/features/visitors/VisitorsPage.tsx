@@ -1,31 +1,29 @@
-import { useState } from "react";
-
-const mockVisitors = [
-  {
-    id: "1",
-    fullName: "Ana García",
-    unitNumber: "A-102",
-    status: "active",
-    createdAt: "2026-09-20 09:15",
-  },
-  {
-    id: "2",
-    fullName: "Luis Pérez",
-    unitNumber: "B-204",
-    status: "closed",
-    createdAt: "2026-09-20 08:30",
-  },
-  {
-    id: "3",
-    fullName: "Marina Ruiz",
-    unitNumber: "C-310",
-    status: "active",
-    createdAt: "2026-09-20 10:05",
-  },
-];
+import { useEffect, useState } from "react";
+import { fetchVisitors } from "../../services/user-service";
+import type { VisitorListItem } from "../../types/auth";
 
 export function VisitorsPage() {
-  const [visitors] = useState(mockVisitors);
+  const [visitors, setVisitors] = useState<VisitorListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadVisitors = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await fetchVisitors();
+        setVisitors(data);
+      } catch {
+        setError("No fue posible cargar la minuta de visitantes.");
+        setVisitors([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadVisitors();
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -38,6 +36,12 @@ export function VisitorsPage() {
         </button>
       </div>
 
+      {error ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-slate-50 text-slate-700">
@@ -49,20 +53,40 @@ export function VisitorsPage() {
             </tr>
           </thead>
           <tbody>
-            {visitors.map((visitor) => (
-              <tr key={visitor.id} className="border-t border-slate-200">
-                <td className="px-4 py-3">{visitor.fullName}</td>
-                <td className="px-4 py-3">{visitor.unitNumber}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full px-2 py-1 text-xs font-medium ${visitor.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}
-                  >
-                    {visitor.status === "active" ? "Activo" : "Finalizado"}
-                  </span>
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-4 py-6 text-center text-slate-500"
+                >
+                  Cargando visitantes...
                 </td>
-                <td className="px-4 py-3">{visitor.createdAt}</td>
               </tr>
-            ))}
+            ) : visitors.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-4 py-6 text-center text-slate-500"
+                >
+                  No hay registros de visitantes para este conjunto.
+                </td>
+              </tr>
+            ) : (
+              visitors.map((visitor) => (
+                <tr key={visitor.id} className="border-t border-slate-200">
+                  <td className="px-4 py-3">{visitor.fullName}</td>
+                  <td className="px-4 py-3">{visitor.unitNumber}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-medium ${visitor.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}
+                    >
+                      {visitor.status === "active" ? "Activo" : "Finalizado"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">{visitor.createdAt}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

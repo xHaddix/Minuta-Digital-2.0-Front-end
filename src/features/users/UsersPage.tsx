@@ -1,57 +1,87 @@
-const mockUsers = [
-  {
-    id: "1",
-    name: "Admin Demo",
-    email: "admin@demo.minutadigital.com",
-    roleCode: "ROLE_COMPLEX_ADMIN",
-  },
-  {
-    id: "2",
-    name: "Javier Rojas",
-    email: "javier@demo.minutadigital.com",
-    roleCode: "ROLE_SECURITY",
-  },
-  {
-    id: "3",
-    name: "Laura Soto",
-    email: "laura@demo.minutadigital.com",
-    roleCode: "ROLE_RESIDENT",
-  },
-];
+import { useEffect, useState } from "react";
+import { useAuth } from "../../auth/useAuth";
+import { fetchUsers } from "../../services/user-service";
+import type { UserListItem } from "../../types/auth";
 
 export function UsersPage() {
+  const { session } = useAuth();
+  const [users, setUsers] = useState<UserListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        if (!session?.residentialComplexId) {
+          setUsers([]);
+          return;
+        }
+
+        const data = await fetchUsers(
+          session?.residentialComplexId,
+          session?.user?.id,
+        );
+        setUsers(data);
+      } catch {
+        setError("No fue posible cargar los usuarios del conjunto.");
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadUsers();
+  }, [session?.residentialComplexId]);
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">
-          Gestión de Usuarios
-        </h1>
-        <button className="rounded-xl bg-sky-600 px-4 py-2 font-medium text-white">
+    <div className="users-page">
+      <div className="users-header">
+        <h1 className="users-title">Gestión de Usuarios</h1>
+        <button type="button" className="users-primary-button">
           Invitar usuario
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-slate-50 text-slate-700">
+      {error ? <div className="users-alert">{error}</div> : null}
+
+      <div className="users-table-card">
+        <table className="users-table">
+          <thead>
             <tr>
-              <th className="px-4 py-3">Nombre</th>
-              <th className="px-4 py-3">Correo</th>
-              <th className="px-4 py-3">Rol</th>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Rol</th>
             </tr>
           </thead>
           <tbody>
-            {mockUsers.map((user) => (
-              <tr key={user.id} className="border-t border-slate-200">
-                <td className="px-4 py-3">{user.name}</td>
-                <td className="px-4 py-3">{user.email}</td>
-                <td className="px-4 py-3">
-                  <span className="rounded-full bg-sky-100 px-2 py-1 text-xs font-medium text-sky-700">
-                    {user.roleCode}
-                  </span>
+            {loading ? (
+              <tr>
+                <td colSpan={3} className="users-empty-row">
+                  Cargando usuarios...
                 </td>
               </tr>
-            ))}
+            ) : users.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="users-empty-row">
+                  No hay usuarios disponibles para este conjunto.
+                </td>
+              </tr>
+            ) : (
+              users.map((user) => (
+                <tr key={user.id}>
+                  <td className="users-name-cell">{user.name}</td>
+                  <td className="users-email-cell">{user.email}</td>
+                  <td className="users-role-cell">
+                    <span className="users-role-toggle">
+                      <span className="users-role-toggle-knob" />
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

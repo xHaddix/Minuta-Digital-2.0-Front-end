@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Building2 } from "lucide-react";
+import { Building2, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
 import { AnimatedButton } from "../../components/ui/AnimatedButton";
@@ -64,6 +64,18 @@ export function LoginPage() {
 
   return (
     <div className="login-view">
+      {loading ? (
+        <div className="auth-transition-overlay" aria-live="polite">
+          <div className="auth-transition-card">
+            <div className="auth-transition-spinner" aria-hidden="true" />
+            <div>
+              <strong>Iniciando sesión</strong>
+              <span>Validando tus credenciales...</span>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="login-grid">
         <aside className="login-hero-panel">
           <div className="login-hero-brand">
@@ -113,7 +125,9 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="login-center-form">
             <label className="login-field">
-              <span className="login-field-icon">✉</span>
+              <span className="login-field-icon">
+                <Mail size={16} strokeWidth={2.1} />
+              </span>
               <input
                 type="email"
                 value={email}
@@ -123,7 +137,9 @@ export function LoginPage() {
             </label>
 
             <div className="login-field login-password-field">
-              <span className="login-field-icon">🔑︎</span>
+              <span className="login-field-icon">
+                <LockKeyhole size={16} strokeWidth={2.1} />
+              </span>
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
@@ -139,7 +155,11 @@ export function LoginPage() {
                 }
                 onClick={() => setShowPassword((current) => !current)}
               >
-                {showPassword ? "◉" : "◌"}
+                {showPassword ? (
+                  <EyeOff size={16} strokeWidth={2.1} />
+                ) : (
+                  <Eye size={16} strokeWidth={2.1} />
+                )}
               </button>
             </div>
 

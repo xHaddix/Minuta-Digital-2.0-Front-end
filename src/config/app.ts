@@ -27,6 +27,11 @@ export const AUTH_ENDPOINTS = {
   resendActivation: "/auth/resend-activation",
   forgotPassword: "/auth/forgot-password",
   resetPassword: "/auth/reset-password",
+  organizations: "/organizations",
+  residentialComplexes: "/residential-complexes",
+  switchComplex: "/auth/switch-complex",
+  users: "/users",
+  visitors: "/visitors",
 } as const;
 
 export const roleLabels: Record<string, string> = {
