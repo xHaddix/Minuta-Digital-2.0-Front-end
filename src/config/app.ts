@@ -1,11 +1,19 @@
 const defaultApiBaseUrl =
   "https://minuta-digital-2-0-back-end.onrender.com/api";
 
+const defaultFrontendUrl = "https://minutadigital.vercel.app";
+
 const resolvedApiBaseUrl =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(
     /\/+$/,
     "",
   ) || defaultApiBaseUrl;
+
+export const FRONTEND_URL =
+  (import.meta.env.VITE_FRONTEND_URL as string | undefined)?.replace(
+    /\/+$/,
+    "",
+  ) || defaultFrontendUrl;
 
 export const APP_CONFIG = {
   API_BASE_URL: resolvedApiBaseUrl,
