@@ -23,7 +23,7 @@ export const APP_CONFIG = {
 
 export const AUTH_ENDPOINTS = {
   login: "/auth/login",
-  activate: "/auth/activate",
+  activate: "/auth/activate-account",
   resendActivation: "/auth/resend-activation",
   forgotPassword: "/auth/forgot-password",
   resetPassword: "/auth/reset-password",

@@ -12,6 +12,8 @@ export function ResetPasswordPage() {
   const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
@@ -154,29 +156,51 @@ export function ResetPasswordPage() {
           <p className="login-center-subtitle">{message}</p>
 
           <form onSubmit={handleSubmit} className="login-center-form">
-            <label className="login-field">
+            <div className="login-field login-password-field">
               <span className="login-field-icon">◌</span>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Nueva contraseña"
                 aria-label="Nueva contraseña"
                 disabled={status === "success" || isSubmitting}
               />
-            </label>
+              <button
+                type="button"
+                className="login-password-toggle"
+                aria-label={
+                  showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                }
+                onClick={() => setShowPassword((current) => !current)}
+              >
+                {showPassword ? "◉" : "◌"}
+              </button>
+            </div>
 
-            <label className="login-field">
+            <div className="login-field login-password-field">
               <span className="login-field-icon">◌</span>
               <input
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 placeholder="Confirmar contraseña"
                 aria-label="Confirmar contraseña"
                 disabled={status === "success" || isSubmitting}
               />
-            </label>
+              <button
+                type="button"
+                className="login-password-toggle"
+                aria-label={
+                  showConfirmPassword
+                    ? "Ocultar contraseña"
+                    : "Mostrar contraseña"
+                }
+                onClick={() => setShowConfirmPassword((current) => !current)}
+              >
+                {showConfirmPassword ? "◉" : "◌"}
+              </button>
+            </div>
 
             {status === "error" ? (
               <FormFeedback variant="error">{message}</FormFeedback>
