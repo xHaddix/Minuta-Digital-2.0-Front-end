@@ -6,10 +6,10 @@ import {
   markVisitorExit,
 } from "../../services/user-service";
 import type { UserListItem, VisitorListItem } from "../../types/auth";
+import { CustomSelect, type SelectOption } from "../../components/ui/Select";
 
 const formatTime = (value?: string | null) => {
   if (!value) return "—";
-
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
@@ -19,8 +19,15 @@ const formatTime = (value?: string | null) => {
   }).format(date);
 };
 
+// Opciones estáticas para el filtro de tabla de visitantes
+const VISITOR_FILTER_OPTIONS: SelectOption[] = [
+  { value: "ALL", label: "Todas las visitas" },
+  { value: "INSIDE", label: "Solo en conjunto (Activos)" },
+  { value: "EXITED", label: "Solo con salida" },
+];
+
 export function DashboardPage() {
-  const { session } = useAuth();
+  const { session, can } = useAuth();
   const [visitors, setVisitors] = useState<VisitorListItem[]>([]);
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,20 +36,43 @@ export function DashboardPage() {
     null,
   );
 
+  // Estado para el selector animado de filtro de la tabla
+  const [visitorFilter, setVisitorFilter] = useState("ALL");
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       setError("");
-      const [visitorData, userData] = await Promise.all([
-        fetchVisitors(),
-        fetchUsers(session?.residentialComplexId, session?.user?.id),
+
+      const results = await Promise.allSettled([
+        can("visitors:read") ? fetchVisitors() : Promise.resolve([]),
+        can("users:read") ? fetchUsers() : Promise.resolve([]),
       ]);
-      setVisitors(visitorData);
-      setUsers(userData);
+
+      const [visitorsResult, usersResult] = results;
+
+      if (visitorsResult.status === "fulfilled") {
+        setVisitors(visitorsResult.value);
+      } else {
+        console.error("Error al obtener visitantes:", visitorsResult.reason);
+      }
+
+      if (usersResult.status === "fulfilled") {
+        setUsers(usersResult.value);
+      } else {
+        console.error("Error al obtener usuarios:", usersResult.reason);
+      }
+
+      if (
+        visitorsResult.status === "rejected" &&
+        usersResult.status === "rejected"
+      ) {
+        setError(
+          "No fue posible consultar la información del conjunto residencial.",
+        );
+      }
     } catch {
-      setError("No fue posible cargar los datos del conjunto en este momento.");
-      setVisitors([]);
-      setUsers([]);
+      setError("Error inesperado al procesar la información del conjunto.");
     } finally {
       setLoading(false);
     }
@@ -50,12 +80,26 @@ export function DashboardPage() {
 
   useEffect(() => {
     void loadDashboardData();
-  }, [session?.residentialComplexId]);
+  }, [session?.residentialComplexId, session?.accessToken]);
+
+  const filteredVisitors = useMemo(() => {
+    if (visitorFilter === "INSIDE") {
+      return visitors.filter((item) => !item.exitTime);
+    }
+    if (visitorFilter === "EXITED") {
+      return visitors.filter((item) => Boolean(item.exitTime));
+    }
+    return visitors;
+  }, [visitors, visitorFilter]);
 
   const metrics = useMemo(() => {
     const activeVisitors = visitors.filter((item) => !item.exitTime).length;
+
     const pendingUsers = users.filter(
-      (item) => item.status === "PENDING",
+      (item) =>
+        item.status === "PENDING" ||
+        item.status === "INACTIVE" ||
+        (item.status as unknown) === 0,
     ).length;
 
     return [
@@ -76,7 +120,7 @@ export function DashboardPage() {
       },
       {
         title: "Solicitudes por revisar",
-        value: String(pendingUsers || 0),
+        value: String(pendingUsers),
         meta: pendingUsers > 0 ? "Requieren atención" : "Sin pendientes",
       },
     ];
@@ -110,10 +154,22 @@ export function DashboardPage() {
 
       <div className="table-card">
         <div className="section-header">
-          <h3>Visitas del conjunto</h3>
-          <button type="button" className="inline-button">
-            Registrar ingreso
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <h3>Visitas del conjunto</h3>
+            {/* Integracion del CustomSelect animado para el filtro */}
+            <CustomSelect
+              options={VISITOR_FILTER_OPTIONS}
+              value={visitorFilter}
+              onChange={setVisitorFilter}
+              placeholder="Filtrar estado"
+            />
+          </div>
+
+          {can("visitors:create") && (
+            <button type="button" className="inline-button">
+              Registrar ingreso
+            </button>
+          )}
         </div>
 
         <div className="table-wrap">
@@ -136,16 +192,16 @@ export function DashboardPage() {
                     Cargando movimientos del conjunto...
                   </td>
                 </tr>
-              ) : visitors.length === 0 ? (
+              ) : filteredVisitors.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="empty-row">
-                    No hay visitantes registrados para este conjunto.
+                    No hay visitantes que coincidan con el filtro.
                   </td>
                 </tr>
               ) : (
-                visitors.map((visitor) => {
-                  const status = visitor.exitTime ? "SALIDA" : "ENTRÓ";
+                filteredVisitors.map((visitor) => {
                   const isActive = !visitor.exitTime;
+                  const status = isActive ? "ENTRÓ" : "SALIDA";
 
                   return (
                     <tr key={visitor.id}>
@@ -156,24 +212,28 @@ export function DashboardPage() {
                       <td>{formatTime(visitor.exitTime)}</td>
                       <td>
                         <span
-                          className={`status-badge ${isActive ? "success" : "warning"}`}
+                          className={`status-badge ${
+                            isActive ? "success" : "warning"
+                          }`}
                         >
                           {status}
                         </span>
                       </td>
                       <td>
-                        <button
-                          type="button"
-                          className="inline-button"
-                          disabled={
-                            processingVisitorId === visitor.id || !isActive
-                          }
-                          onClick={() => handleCheckOut(visitor.id)}
-                        >
-                          {processingVisitorId === visitor.id
-                            ? "Procesando..."
-                            : "Check out"}
-                        </button>
+                        {can("visitors:check_out") && (
+                          <button
+                            type="button"
+                            className="inline-button"
+                            disabled={
+                              processingVisitorId === visitor.id || !isActive
+                            }
+                            onClick={() => handleCheckOut(visitor.id)}
+                          >
+                            {processingVisitorId === visitor.id
+                              ? "Procesando..."
+                              : "Check out"}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );

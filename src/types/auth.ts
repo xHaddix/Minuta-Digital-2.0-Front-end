@@ -1,3 +1,8 @@
+// ============================================================================
+// Minuta Digital - Frontend Type Definitions
+// ============================================================================
+
+// 1. CÓDIGOS DOMINIO Y RBAC
 export type RoleCode =
   | "ROLE_DEV"
   | "ROLE_ORG_ADMIN"
@@ -33,42 +38,84 @@ export type PermissionCode =
   | "complexes:manage"
   | "organizations:manage";
 
-export interface UserSession {
+// 2. CATÁLOGOS AUXILIARES
+export interface DocumentTypeInfo {
   id: string;
-  email: string;
+  code: string;
+  description?: string | null;
+}
+
+export interface RoleInfo {
+  id: string;
+  code: RoleCode;
   name: string;
-  roleCode: RoleCode;
 }
 
-export interface LoginResponse {
-  accessToken: string;
-  user: UserSession & {
-    roleName?: string;
-    organizationId?: string | null;
-    residentialComplexId?: string | null;
-  };
-  permissions?: PermissionCode[];
-}
-
+// 3. ENTIDADES DE DOMINIO BASE (Single Source of Truth)
 export interface Organization {
   id: string;
   name: string;
-  status?: string;
+  slug?: string;
+  urlLogo?: string | null;
+  logoUrl?: string | null; // Sostener por retrocompatibilidad UI
+  status?: number | string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ResidentialComplex {
   id: string;
   name: string;
-  organizationId?: string | null;
-  status?: string;
+  slug?: string;
+  organizationId?: string;
+  urlLogo?: string | null;
+  logoUrl?: string | null; // Sostener por retrocompatibilidad UI
+  contactEmail?: string;
+  contactPhone?: string | null;
+  status?: number | string;
+  planCode?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
+// 4. ENTIDAD USUARIO Y DERIVACIONES DE VISTA
+export interface BaseUser {
+  id: string;
+  email: string;
+  name: string;
+  roleCode: RoleCode;
+  organizationId?: string | null;
+  residentialComplexId?: string | null;
+}
+
+/// Usado en el estado de sesión de AuthContext
+export interface UserSession extends BaseUser {
+  roleName?: string;
+}
+
+/// Usado en la tabla / listado de usuarios del Dashboard
+export interface UserListItem extends BaseUser {
+  phone?: string | null;
+  status?: number | string;
+  documentNumber?: string | null;
+  createdAt?: string;
+  role?: RoleInfo;
+  documentType?: DocumentTypeInfo | null;
+}
+
+// 5. AUTENTICACIÓN Y CONTEXTO MULTI-TENANT
 export interface JwtPayload {
   sub: string;
   email: string;
   roleCode: RoleCode;
   organizationId?: string | null;
   residentialComplexId?: string | null;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  user: UserSession;
+  permissions?: PermissionCode[];
 }
 
 export interface AuthState {
@@ -88,11 +135,7 @@ export interface SwitchComplexRequest {
 export interface SwitchComplexResponse {
   accessToken: string;
   permissions?: PermissionCode[];
-  user?: UserSession & {
-    roleName?: string;
-    organizationId?: string | null;
-    residentialComplexId?: string | null;
-  };
+  user?: UserSession;
 }
 
 export interface ValidationErrorResponse {
@@ -101,55 +144,20 @@ export interface ValidationErrorResponse {
   statusCode?: number;
 }
 
-export interface Visitor {
-  id: string;
-  fullName: string;
-  unitNumber: string;
-  status: "active" | "closed";
-  createdAt: string;
-}
-
-export interface UserRecord {
-  id: string;
-  email: string;
-  name: string;
-  roleCode: RoleCode;
-  organizationId?: string | null;
-  residentialComplexId?: string | null;
-}
-
-export interface UserListItem {
-  id: string;
-  name: string;
-  email: string;
-  roleCode: RoleCode;
-  organizationId?: string | null;
-  residentialComplexId?: string | null;
-}
-
+// 6. DOMINIO OPERATIVO (Visitantes)
 export interface VisitorListItem {
   id: string;
   fullName: string;
-  documentNumber?: string;
-  unitNumber?: string;
-  unitTarget?: string;
+  documentNumber?: string | null;
+  unitNumber?: string | null;
+  unitTarget?: string | null;
   entryTime?: string | null;
   exitTime?: string | null;
-  status?: "active" | "closed";
+  status?: "active" | "closed" | string;
   createdAt?: string;
   authorizerUser?: {
     id: string;
     name: string;
     email: string;
   } | null;
-}
-
-export interface UserListItem {
-  id: string;
-  name: string;
-  email: string;
-  roleCode: RoleCode;
-  organizationId?: string | null;
-  residentialComplexId?: string | null;
-  status?: string;
 }

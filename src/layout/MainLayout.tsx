@@ -1,8 +1,6 @@
-import { useEffect, useState } from "react";
-import type { ChangeEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
-  ChevronDown,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -16,6 +14,7 @@ import { useAuth } from "../auth/useAuth";
 import { roleLabels } from "../config/app";
 import { fetchResidentialComplexes } from "../services/auth-context";
 import type { ResidentialComplex } from "../types/auth";
+import { CustomSelect, type SelectOption } from "../components/ui/Select";
 
 const navItems = [
   {
@@ -72,10 +71,17 @@ export function MainLayout() {
     void loadComplexes();
   }, [roleCode]);
 
-  const handleComplexChange = async (event: ChangeEvent<HTMLSelectElement>) => {
-    const value = event.target.value;
-    if (!value) return;
-    await switchComplex(value);
+  // Mapeo dinámico de conjuntos a las opciones que espera el CustomSelect
+  const complexOptions: SelectOption[] = useMemo(() => {
+    return complexes.map((complex) => ({
+      value: complex.id,
+      label: complex.name,
+    }));
+  }, [complexes]);
+
+  const handleComplexChange = async (complexId: string) => {
+    if (!complexId || complexId === session?.residentialComplexId) return;
+    await switchComplex(complexId);
   };
 
   const handleLogout = async () => {
@@ -168,24 +174,15 @@ export function MainLayout() {
 
           <div className="topbar-group">
             {(roleCode === "ROLE_DEV" || roleCode === "ROLE_ORG_ADMIN") && (
-              <div className="custom-select-wrap">
-                <select
-                  className="complex-select"
-                  onChange={handleComplexChange}
-                  value={session?.residentialComplexId ?? ""}
-                  disabled={isComplexLoading || complexes.length === 0}
-                >
-                  <option value="">Selecciona un conjunto</option>
-                  {complexes.map((complex) => (
-                    <option key={complex.id} value={complex.id}>
-                      {complex.name}
-                    </option>
-                  ))}
-                </select>
-                <span className="select-arrow" aria-hidden="true">
-                  <ChevronDown size={16} strokeWidth={2.2} />
-                </span>
-              </div>
+              <CustomSelect
+                options={complexOptions}
+                value={session?.residentialComplexId ?? ""}
+                onChange={handleComplexChange}
+                placeholder={
+                  isComplexLoading ? "Cargando..." : "Selecciona un conjunto"
+                }
+                disabled={isComplexLoading || complexes.length === 0}
+              />
             )}
 
             <button
