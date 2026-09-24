@@ -6,6 +6,8 @@ interface UseNotificationsOptions {
   residentialComplexId: string | null | undefined;
 }
 
+export const VISITOR_UPDATED_EVENT = "minuta-digital-visitor-updated";
+
 export const useNotifications = ({
   accessToken,
   residentialComplexId,
@@ -14,6 +16,12 @@ export const useNotifications = ({
     if (!accessToken || !residentialComplexId) return;
 
     const socket = connectNotifications(accessToken);
+    socket.on("visitor_updated", (visitor) => {
+      window.dispatchEvent(
+        new CustomEvent(VISITOR_UPDATED_EVENT, { detail: visitor }),
+      );
+    });
+
     return () => {
       socket.disconnect();
     };

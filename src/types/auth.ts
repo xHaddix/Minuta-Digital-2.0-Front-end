@@ -19,6 +19,10 @@ export type PermissionCode =
   | "visitors:create"
   | "visitors:authorize"
   | "visitors:check_out"
+  | "apartments:read"
+  | "apartments:create"
+  | "apartments:update"
+  | "apartments:delete"
   | "correspondence:read"
   | "correspondence:read_own"
   | "correspondence:create"
@@ -62,6 +66,8 @@ export interface BaseUser {
   roleCode: RoleCode;
   organizationId?: string | null;
   residentialComplexId?: string | null;
+  organizationName?: string | null;
+  residentialComplexName?: string | null;
 }
 
 /// Usado en el estado de sesión de AuthContext
@@ -91,6 +97,8 @@ export interface AuthState {
   isAuthenticated: boolean;
   organizationId: string | null;
   residentialComplexId: string | null;
+  organizationName?: string | null;
+  residentialComplexName?: string | null;
   roleCode: RoleCode | null;
   contextSelected?: boolean;
 }

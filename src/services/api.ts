@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { APP_CONFIG } from "../config/app";
-import { getStoredAuth } from "../auth/auth-storage";
+import { clearStoredAuth, getStoredAuth } from "../auth/auth-storage";
 import type { ValidationErrorResponse } from "../types/auth";
 
 const api = axios.create({
@@ -37,7 +37,7 @@ api.interceptors.response.use(
       requestUrl.includes("/auth/reset-password");
 
     if (status === 401 && !isPublicAuthFlow) {
-      localStorage.removeItem(APP_CONFIG.AUTH_STORAGE_KEY);
+      clearStoredAuth();
       window.location.assign("/login");
     }
 

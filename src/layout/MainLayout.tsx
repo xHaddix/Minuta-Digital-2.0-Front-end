@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Building2,
+  ChevronDown,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -11,12 +12,15 @@ import {
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 import { Can } from "../auth/Can";
+import { ContextSelectorModal } from "../auth/ContextSelectorModal";
 import { useAuth } from "../auth/useAuth";
 import { roleLabels } from "../config/app";
-import { fetchResidentialComplexes } from "../services/auth-context";
+import {
+  fetchOrganizations,
+  fetchResidentialComplexes,
+} from "../services/auth-context";
+import type { Organization, PermissionCode } from "../types/auth";
 import type { ResidentialComplex } from "../types/user";
-import type { PermissionCode } from "../types/auth";
-import { CustomSelect, type SelectOption } from "../components/ui/Select";
 import { useNotifications } from "../notifications/useNotifications";
 
 const navItems: Array<{
@@ -44,6 +48,12 @@ const navItems: Array<{
     icon: UsersRound,
   },
   {
+    label: "Apartamentos",
+    to: "/apartments",
+    permission: "apartments:read",
+    icon: Building2,
+  },
+  {
     label: "PQRS",
     to: "/dashboard",
     permission: "users:read",
@@ -52,10 +62,13 @@ const navItems: Array<{
 ];
 
 export function MainLayout() {
-  const { session, logout, switchComplex } = useAuth();
-  const [complexes, setComplexes] = useState<ResidentialComplex[]>([]);
-  const [isComplexLoading, setIsComplexLoading] = useState(false);
+  const { session, logout } = useAuth();
+  const [isContextSelectorOpen, setIsContextSelectorOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [contextNames, setContextNames] = useState({
+    organizationName: session?.organizationName ?? null,
+    residentialComplexName: session?.residentialComplexName ?? null,
+  });
 
   const roleCode = session?.user?.roleCode ?? "ROLE_RESIDENT";
   const canSwitchComplex =
@@ -63,43 +76,70 @@ export function MainLayout() {
     roleCode === "ROLE_ORG_ADMIN" ||
     roleCode === "ROLE_COMPLEX_ADMIN";
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    setContextNames({
+      organizationName: session?.organizationName ?? null,
+      residentialComplexName: session?.residentialComplexName ?? null,
+    });
+
+    if (!session?.organizationId && !session?.residentialComplexId) {
+      return;
+    }
+
+    const loadContextNames = async () => {
+      const organizationsPromise = session.organizationName
+        ? Promise.resolve([] as Organization[])
+        : fetchOrganizations();
+      const complexesPromise = session.residentialComplexName
+        ? Promise.resolve([] as ResidentialComplex[])
+        : fetchResidentialComplexes(session.organizationId);
+
+      const [organizationsResult, complexesResult] = await Promise.allSettled([
+        organizationsPromise,
+        complexesPromise,
+      ]);
+
+      if (isCancelled) return;
+
+      const organization =
+        organizationsResult.status === "fulfilled"
+          ? organizationsResult.value.find(
+              (item) => item.id === session.organizationId,
+            )
+          : undefined;
+      const complex =
+        complexesResult.status === "fulfilled"
+          ? complexesResult.value.find(
+              (item) => item.id === session.residentialComplexId,
+            )
+          : undefined;
+
+      setContextNames((current) => ({
+        organizationName:
+          current.organizationName ?? organization?.name ?? null,
+        residentialComplexName:
+          current.residentialComplexName ?? complex?.name ?? null,
+      }));
+    };
+
+    void loadContextNames();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    session?.organizationId,
+    session?.organizationName,
+    session?.residentialComplexId,
+    session?.residentialComplexName,
+  ]);
+
   useNotifications({
     accessToken: session?.accessToken,
     residentialComplexId: session?.residentialComplexId,
   });
-
-  useEffect(() => {
-    const loadComplexes = async () => {
-      if (!canSwitchComplex) {
-        return;
-      }
-
-      try {
-        setIsComplexLoading(true);
-        const data = await fetchResidentialComplexes();
-        setComplexes(data);
-      } catch {
-        setComplexes([]);
-      } finally {
-        setIsComplexLoading(false);
-      }
-    };
-
-    void loadComplexes();
-  }, [canSwitchComplex]);
-
-  // Mapeo dinámico de conjuntos a las opciones que espera el CustomSelect
-  const complexOptions: SelectOption[] = useMemo(() => {
-    return complexes.map((complex) => ({
-      value: complex.id,
-      label: complex.name,
-    }));
-  }, [complexes]);
-
-  const handleComplexChange = async (complexId: string) => {
-    if (!complexId || complexId === session?.residentialComplexId) return;
-    await switchComplex(complexId);
-  };
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -110,6 +150,9 @@ export function MainLayout() {
 
   return (
     <div className="layout-shell">
+      {isContextSelectorOpen ? (
+        <ContextSelectorModal onClose={() => setIsContextSelectorOpen(false)} />
+      ) : null}
       {isLoggingOut ? (
         <div
           className="auth-transition-overlay auth-transition-overlay--logout"
@@ -160,7 +203,6 @@ export function MainLayout() {
             </Can>
           ))}
         </nav>
-
         <div className="sidebar-footer">
           <button
             type="button"
@@ -191,15 +233,23 @@ export function MainLayout() {
 
           <div className="topbar-group">
             {canSwitchComplex && (
-              <CustomSelect
-                options={complexOptions}
-                value={session?.residentialComplexId ?? ""}
-                onChange={handleComplexChange}
-                placeholder={
-                  isComplexLoading ? "Cargando..." : "Selecciona un conjunto"
-                }
-                disabled={isComplexLoading || complexes.length === 0}
-              />
+              <button
+                type="button"
+                className="context-switcher"
+                onClick={() => setIsContextSelectorOpen(true)}
+                title="Cambiar organización o conjunto residencial"
+              >
+                <Building2 size={17} strokeWidth={2} />
+                <span className="context-switcher-copy">
+                  <small>
+                    {contextNames.organizationName ?? "Organización activa"}
+                  </small>
+                  <strong>
+                    {contextNames.residentialComplexName ?? "Conjunto actual"}
+                  </strong>
+                </span>
+                <ChevronDown size={16} strokeWidth={2} />
+              </button>
             )}
 
             <button

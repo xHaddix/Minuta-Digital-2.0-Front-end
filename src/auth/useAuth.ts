@@ -9,7 +9,8 @@ import {
   buildAuthState,
   clearStoredAuth,
   getStoredAuth,
-  setStoredAuth,
+  isAuthRemembered,
+  setStoredAuthWithPreference,
 } from "./auth-storage";
 
 const FALLBACK_PERMISSIONS_BY_ROLE: Record<RoleCode, PermissionCode[]> = {
@@ -135,58 +136,81 @@ export const useAuth = () => {
     return nextAuth;
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const data = await loginRequest(email, password);
+  const login = useCallback(
+    async (email: string, password: string, rememberMe: boolean) => {
+      const data = await loginRequest(email, password);
 
-    const requiresContextSelection =
-      data.user.roleCode === "ROLE_DEV" ||
-      data.user.roleCode === "ROLE_ORG_ADMIN";
+      const requiresContextSelection =
+        data.user.roleCode === "ROLE_DEV" ||
+        data.user.roleCode === "ROLE_ORG_ADMIN";
 
-    const auth = buildAuthState({
-      accessToken: data.accessToken,
-      user: data.user,
-      permissions: resolvePermissions(data.user.roleCode, data.permissions),
-      organizationId: requiresContextSelection
-        ? null
-        : (data.user.organizationId ?? null),
-      residentialComplexId: requiresContextSelection
-        ? null
-        : (data.user.residentialComplexId ?? null),
-      roleCode: data.user.roleCode,
-      contextSelected: !requiresContextSelection,
-    });
+      const auth = buildAuthState({
+        accessToken: data.accessToken,
+        user: data.user,
+        permissions: resolvePermissions(data.user.roleCode, data.permissions),
+        organizationId: requiresContextSelection
+          ? null
+          : (data.user.organizationId ?? null),
+        residentialComplexId: requiresContextSelection
+          ? null
+          : (data.user.residentialComplexId ?? null),
+        roleCode: data.user.roleCode,
+        contextSelected: !requiresContextSelection,
+      });
 
-    setStoredAuth(auth);
-    setSession(auth);
-    return data;
-  }, []);
+      setStoredAuthWithPreference(auth, rememberMe);
+      setSession(auth);
+      return data;
+    },
+    [],
+  );
 
-  const switchComplex = useCallback(async (residentialComplexId: string) => {
-    const auth = getStoredAuth();
-    if (!auth?.accessToken) {
-      throw new Error("No hay sesión activa");
-    }
+  const switchComplex = useCallback(
+    async (
+      residentialComplexId: string,
+      contextNames?: {
+        organizationName?: string | null;
+        residentialComplexName?: string | null;
+      },
+    ) => {
+      const auth = getStoredAuth();
+      if (!auth?.accessToken) {
+        throw new Error("No hay sesión activa");
+      }
 
-    const data = await switchComplexRequest(residentialComplexId);
+      const data = await switchComplexRequest(residentialComplexId);
 
-    const nextAuth = buildAuthState({
-      accessToken: data.accessToken,
-      user: data.user ?? auth.user,
-      permissions: resolvePermissions(
-        auth.roleCode ?? auth.user?.roleCode ?? null,
-        data.permissions,
-      ),
-      organizationId: data.user?.organizationId ?? auth.organizationId ?? null,
-      residentialComplexId:
-        data.user?.residentialComplexId ?? residentialComplexId,
-      roleCode: auth.roleCode ?? auth.user?.roleCode ?? null,
-      contextSelected: true,
-    });
+      const nextAuth = buildAuthState({
+        accessToken: data.accessToken,
+        user: data.user ?? auth.user,
+        permissions: resolvePermissions(
+          auth.roleCode ?? auth.user?.roleCode ?? null,
+          data.permissions,
+        ),
+        organizationId:
+          data.user?.organizationId ?? auth.organizationId ?? null,
+        residentialComplexId:
+          data.user?.residentialComplexId ?? residentialComplexId,
+        organizationName:
+          contextNames?.organizationName ??
+          data.user?.organizationName ??
+          auth.organizationName ??
+          null,
+        residentialComplexName:
+          contextNames?.residentialComplexName ??
+          data.user?.residentialComplexName ??
+          auth.residentialComplexName ??
+          null,
+        roleCode: auth.roleCode ?? auth.user?.roleCode ?? null,
+        contextSelected: true,
+      });
 
-    setStoredAuth(nextAuth);
-    setSession(nextAuth);
-    return nextAuth;
-  }, []);
+      setStoredAuthWithPreference(nextAuth, isAuthRemembered());
+      setSession(nextAuth);
+      return nextAuth;
+    },
+    [],
+  );
 
   const logout = useCallback(() => {
     clearStoredAuth();

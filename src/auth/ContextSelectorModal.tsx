@@ -6,6 +6,7 @@ import {
   Building,
   Building2,
   ChevronLeft,
+  X,
   Search,
   ShieldCheck,
 } from "lucide-react";
@@ -20,12 +21,17 @@ import {
 type Step = "ORGANIZATION" | "COMPLEX";
 type SortOrder = "ASC" | "DESC";
 
-export function ContextSelectorModal() {
+interface ContextSelectorModalProps {
+  onClose?: () => void;
+}
+
+export function ContextSelectorModal({ onClose }: ContextSelectorModalProps) {
   const navigate = useNavigate();
   const { session, switchComplex: performSwitchComplex } = useAuth();
   const roleCode = session?.user?.roleCode ?? null;
   const isDev = roleCode === "ROLE_DEV";
   const isOrgAdmin = roleCode === "ROLE_ORG_ADMIN";
+  const isComplexAdmin = roleCode === "ROLE_COMPLEX_ADMIN";
 
   const [currentStep, setCurrentStep] = useState<Step>(
     isDev ? "ORGANIZATION" : "COMPLEX",
@@ -62,7 +68,7 @@ export function ContextSelectorModal() {
   useEffect(() => {
     const loadComplexes = async () => {
       if (isDev && !selectedOrganization) return;
-      if (!isDev && !isOrgAdmin) return;
+      if (!isDev && !isOrgAdmin && !isComplexAdmin) return;
 
       try {
         setIsLoading(true);
@@ -79,7 +85,7 @@ export function ContextSelectorModal() {
     };
 
     void loadComplexes();
-  }, [isDev, isOrgAdmin, selectedOrganization]);
+  }, [isComplexAdmin, isDev, isOrgAdmin, selectedOrganization]);
 
   const handleSelectOrganization = (org: Organization) => {
     setSelectedOrganization(org);
@@ -87,11 +93,18 @@ export function ContextSelectorModal() {
     setCurrentStep("COMPLEX");
   };
 
-  const handleSelectComplex = async (complexId: string) => {
+  const handleSelectComplex = async (
+    complexId: string,
+    complexName: string,
+  ) => {
     try {
       setIsSwitching(true);
       setError("");
-      await performSwitchComplex(complexId);
+      await performSwitchComplex(complexId, {
+        organizationName: selectedOrganization?.name,
+        residentialComplexName: complexName,
+      });
+      onClose?.();
       navigate("/dashboard", { replace: true });
     } catch {
       setError("No fue posible conmutar al conjunto seleccionado.");
@@ -166,6 +179,18 @@ export function ContextSelectorModal() {
               )}
             </div>
           </div>
+          {onClose ? (
+            <button
+              type="button"
+              className="context-close-button"
+              onClick={onClose}
+              disabled={isSwitching}
+              aria-label="Cerrar selector de contexto"
+              title="Cerrar"
+            >
+              <X size={20} />
+            </button>
+          ) : null}
         </div>
 
         <div className="context-controls-bar">
@@ -243,7 +268,7 @@ export function ContextSelectorModal() {
                         id: item.id,
                         name: item.name,
                       })
-                    : handleSelectComplex(item.id)
+                    : handleSelectComplex(item.id, item.name)
                 }
               >
                 <div className="entity-card-media">

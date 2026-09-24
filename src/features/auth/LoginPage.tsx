@@ -17,8 +17,9 @@ const features = [
 export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState("admin@demo.minutadigital.com");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -43,7 +44,7 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      await login(trimmedEmail, trimmedPassword);
+      await login(trimmedEmail, trimmedPassword, rememberMe);
       navigate("/dashboard");
     } catch (caughtError) {
       const responseMessage = axios.isAxiosError(caughtError)
@@ -132,7 +133,7 @@ export function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@demo.minutadigital.com"
+                placeholder="example@domain.com"
               />
             </label>
 
@@ -144,7 +145,7 @@ export function LoginPage() {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••"
+                placeholder="••••••••••••••••"
                 aria-label="Contraseña"
               />
               <button
@@ -165,7 +166,11 @@ export function LoginPage() {
 
             <div className="login-row">
               <label className="login-check">
-                <input type="checkbox" />
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                />
                 <span>Recordarme</span>
               </label>
 

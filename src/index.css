@@ -535,6 +535,54 @@ a {
   overflow: visible;
 }
 
+.visitor-entry-modal {
+  align-items: stretch;
+  width: min(100%, 520px);
+}
+
+.visitor-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #334155;
+}
+
+.visitor-entry-header h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.visitor-entry-close {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.visitor-entry-form {
+  width: 100%;
+  align-items: stretch;
+}
+
+.visitor-entry-form .form-group,
+.visitor-entry-form .form-group input {
+  width: 100%;
+}
+
+.visitor-entry-form .modal-actions {
+  width: 100%;
+}
+
 .modal-content h2 {
   font-size: 1.25rem;
   font-weight: 600;

@@ -8,6 +8,7 @@ import { ResetPasswordPage } from "../features/auth/ResetPasswordPage";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { VisitorsPage } from "../features/visitors/VisitorsPage";
 import { UsersPage } from "../features/users/UsersPage";
+import { ApartmentsPage } from "../features/apartments/ApartmentsPage";
 import { MainLayout } from "../layout/MainLayout";
 
 export function AppRouter() {
@@ -61,6 +62,22 @@ export function AppRouter() {
               }
             >
               <UsersPage />
+            </Can>
+          }
+        />
+
+        <Route
+          path="apartments"
+          element={
+            <Can
+              perform="apartments:read"
+              fallback={
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-800">
+                  No tiene permisos para administrar apartamentos.
+                </div>
+              }
+            >
+              <ApartmentsPage />
             </Can>
           }
         />

@@ -2,7 +2,6 @@ import { APP_CONFIG } from "../config/app";
 import type {
   AuthState,
   JwtPayload,
-  PermissionCode,
   RoleCode,
   UserSession,
 } from "../types/auth";
@@ -21,47 +20,11 @@ const ROLE_CODES: ReadonlySet<string> = new Set<RoleCode>([
   "ROLE_RESIDENT",
 ]);
 
-const PERMISSION_CODES: ReadonlySet<string> = new Set<PermissionCode>([
-  "users:read",
-  "users:create",
-  "users:update",
-  "users:delete",
-  "visitors:read",
-  "visitors:create",
-  "visitors:authorize",
-  "visitors:check_out",
-  "correspondence:read",
-  "correspondence:read_own",
-  "correspondence:create",
-  "correspondence:deliver",
-  "amenities:read",
-  "amenities:manage",
-  "amenities:book",
-  "amenities:approve",
-  "amenities:verify",
-  "pqrs:read_own",
-  "pqrs:read_all",
-  "pqrs:create",
-  "pqrs:respond",
-  "pqrs:close",
-  "events:read",
-  "events:create",
-  "marketplace:read",
-  "marketplace:create",
-  "marketplace:manage_own",
-  "marketplace:moderate",
-  "complexes:manage",
-  "organizations:manage",
-]);
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
 const isRoleCode = (value: unknown): value is RoleCode =>
   typeof value === "string" && ROLE_CODES.has(value);
-
-const isPermissionCode = (value: unknown): value is PermissionCode =>
-  typeof value === "string" && PERMISSION_CODES.has(value);
 
 const isNullableString = (value: unknown): value is string | null =>
   value === null || typeof value === "string";
@@ -86,10 +49,14 @@ const isAuthState = (value: unknown): value is AuthState => {
     isNullableString(value.accessToken) &&
     (value.user === null || isUserSession(value.user)) &&
     Array.isArray(value.permissions) &&
-    value.permissions.every(isPermissionCode) &&
+    value.permissions.every((permission) => typeof permission === "string") &&
     typeof value.isAuthenticated === "boolean" &&
     isNullableString(value.organizationId) &&
     isNullableString(value.residentialComplexId) &&
+    (value.organizationName === undefined ||
+      isNullableString(value.organizationName)) &&
+    (value.residentialComplexName === undefined ||
+      isNullableString(value.residentialComplexName)) &&
     (value.roleCode === null || isRoleCode(value.roleCode)) &&
     (value.contextSelected === undefined ||
       typeof value.contextSelected === "boolean")
@@ -128,23 +95,48 @@ export const decodeJwtPayload = (accessToken: string): JwtPayload | null => {
 
 export const getStoredAuth = (): AuthState | null => {
   try {
-    const raw = localStorage.getItem(APP_CONFIG.AUTH_STORAGE_KEY);
-    if (!raw) return null;
+    const storageEntries = [
+      [localStorage, APP_CONFIG.AUTH_STORAGE_KEY],
+      [sessionStorage, APP_CONFIG.SESSION_STORAGE_KEY],
+    ] as const;
 
-    const parsed: unknown = JSON.parse(raw);
-    return isAuthState(parsed) ? parsed : null;
+    for (const [storage, key] of storageEntries) {
+      const raw = storage.getItem(key);
+      if (!raw) continue;
+
+      const parsed: unknown = JSON.parse(raw);
+      if (isAuthState(parsed)) return parsed;
+    }
+
+    return null;
   } catch {
     return null;
   }
 };
 
-export const setStoredAuth = (auth: AuthState) => {
-  localStorage.setItem(APP_CONFIG.AUTH_STORAGE_KEY, JSON.stringify(auth));
+export const isAuthRemembered = () =>
+  localStorage.getItem(APP_CONFIG.AUTH_STORAGE_KEY) !== null;
+
+export const setStoredAuthWithPreference = (
+  auth: AuthState,
+  rememberMe: boolean,
+) => {
+  const serializedAuth = JSON.stringify(auth);
+
+  if (rememberMe) {
+    localStorage.setItem(APP_CONFIG.AUTH_STORAGE_KEY, serializedAuth);
+    sessionStorage.removeItem(APP_CONFIG.SESSION_STORAGE_KEY);
+  } else {
+    sessionStorage.setItem(APP_CONFIG.SESSION_STORAGE_KEY, serializedAuth);
+    localStorage.removeItem(APP_CONFIG.AUTH_STORAGE_KEY);
+  }
+
   notifyAuthChanged();
 };
 
 export const clearStoredAuth = () => {
   localStorage.removeItem(APP_CONFIG.AUTH_STORAGE_KEY);
+  sessionStorage.removeItem(APP_CONFIG.SESSION_STORAGE_KEY);
   notifyAuthChanged();
 };
 
@@ -154,6 +146,8 @@ export const buildAuthState = (payload: {
   permissions: AuthState["permissions"];
   organizationId?: string | null;
   residentialComplexId?: string | null;
+  organizationName?: string | null;
+  residentialComplexName?: string | null;
   roleCode?: AuthState["roleCode"];
   contextSelected?: boolean;
 }): AuthState => {
@@ -172,6 +166,12 @@ export const buildAuthState = (payload: {
       payload.residentialComplexId !== undefined
         ? payload.residentialComplexId
         : (jwtPayload?.residentialComplexId ?? null),
+    organizationName:
+      payload.organizationName ?? payload.user?.organizationName ?? null,
+    residentialComplexName:
+      payload.residentialComplexName ??
+      payload.user?.residentialComplexName ??
+      null,
     roleCode:
       payload.roleCode ??
       jwtPayload?.roleCode ??

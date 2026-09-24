@@ -32,6 +32,8 @@ export const AUTH_ENDPOINTS = {
   residentialComplexes: "/residential-complexes",
   switchComplex: "/auth/switch-complex",
   users: "/users",
+  apartments: "/apartments",
+  residents: "/residents",
   visitors: "/visitors",
 } as const;
 
