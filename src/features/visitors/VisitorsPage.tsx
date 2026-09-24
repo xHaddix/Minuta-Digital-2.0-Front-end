@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { fetchVisitors } from "../../services/user-service";
-import type { VisitorListItem } from "../../types/auth";
+import { fetchVisitors } from "../../services/visitor-service";
+import type { VisitorListItem } from "../../types/visitor";
 
 export function VisitorsPage() {
   const [visitors, setVisitors] = useState<VisitorListItem[]>([]);
@@ -31,7 +31,10 @@ export function VisitorsPage() {
         <h1 className="text-2xl font-bold text-slate-900">
           Control de Visitantes
         </h1>
-        <button className="rounded-xl bg-emerald-600 px-4 py-2 font-medium text-white">
+        <button
+          type="button"
+          className="rounded-xl bg-emerald-600 px-4 py-2 font-medium text-white"
+        >
           Registrar ingreso
         </button>
       </div>

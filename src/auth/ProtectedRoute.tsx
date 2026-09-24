@@ -11,16 +11,20 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
   const { isAuthenticated, hasActiveComplex, session } = useAuth();
   const roleCode = session?.user?.roleCode ?? null;
+  const requiresContextSelection =
+    Boolean(session?.accessToken) &&
+    (roleCode === "ROLE_DEV" || roleCode === "ROLE_ORG_ADMIN") &&
+    (session?.contextSelected !== true || !session?.residentialComplexId);
 
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (!hasActiveComplex()) {
-    if (roleCode === "ROLE_DEV" || roleCode === "ROLE_ORG_ADMIN") {
-      return <ContextSelectorModal />;
-    }
+  if (requiresContextSelection) {
+    return <ContextSelectorModal />;
+  }
 
+  if (!hasActiveComplex()) {
     return (
       <div className="context-required-state">
         <div className="context-required-card">

@@ -9,7 +9,8 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
-import type { Organization, ResidentialComplex } from "../types/auth";
+import type { Organization } from "../types/auth";
+import type { ResidentialComplex } from "../types/user";
 import { useAuth } from "./useAuth";
 import {
   fetchOrganizations,
@@ -23,26 +24,22 @@ export function ContextSelectorModal() {
   const navigate = useNavigate();
   const { session, switchComplex: performSwitchComplex } = useAuth();
   const roleCode = session?.user?.roleCode ?? null;
-
   const isDev = roleCode === "ROLE_DEV";
   const isOrgAdmin = roleCode === "ROLE_ORG_ADMIN";
 
   const [currentStep, setCurrentStep] = useState<Step>(
     isDev ? "ORGANIZATION" : "COMPLEX",
   );
-
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [complexes, setComplexes] = useState<ResidentialComplex[]>([]);
   const [selectedOrganization, setSelectedOrganization] =
     useState<Organization | null>(null);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("ASC");
   const [isLoading, setIsLoading] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [error, setError] = useState("");
 
-  // Carga de organizaciones para ROLE_DEV
   useEffect(() => {
     const loadOrganizations = async () => {
       if (!isDev) return;
@@ -62,16 +59,16 @@ export function ContextSelectorModal() {
     void loadOrganizations();
   }, [isDev]);
 
-  // Carga de conjuntos residenciales
   useEffect(() => {
     const loadComplexes = async () => {
       if (isDev && !selectedOrganization) return;
+      if (!isDev && !isOrgAdmin) return;
 
       try {
         setIsLoading(true);
         setError("");
         const data = await fetchResidentialComplexes(
-          isDev ? selectedOrganization?.id : null,
+          isDev ? selectedOrganization?.id : undefined,
         );
         setComplexes(data);
       } catch {
@@ -81,9 +78,7 @@ export function ContextSelectorModal() {
       }
     };
 
-    if (isOrgAdmin || (isDev && selectedOrganization)) {
-      void loadComplexes();
-    }
+    void loadComplexes();
   }, [isDev, isOrgAdmin, selectedOrganization]);
 
   const handleSelectOrganization = (org: Organization) => {

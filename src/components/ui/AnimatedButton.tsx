@@ -14,6 +14,7 @@ export function AnimatedButton({
   className = "",
   children,
   disabled,
+  type = "button",
   ...props
 }: AnimatedButtonProps) {
   const classes = [
@@ -26,7 +27,12 @@ export function AnimatedButton({
     .join(" ");
 
   return (
-    <button {...props} className={classes} disabled={disabled || loading}>
+    <button
+      {...props}
+      type={type}
+      className={classes}
+      disabled={disabled || loading}
+    >
       <span className="ui-animated-button__shine" aria-hidden="true" />
       <span>{loading ? "Cargando..." : children}</span>
     </button>

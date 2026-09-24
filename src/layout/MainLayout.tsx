@@ -7,16 +7,24 @@ import {
   ShieldCheck,
   UserRound,
   UsersRound,
+  type LucideIcon,
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 import { Can } from "../auth/Can";
 import { useAuth } from "../auth/useAuth";
 import { roleLabels } from "../config/app";
 import { fetchResidentialComplexes } from "../services/auth-context";
-import type { ResidentialComplex } from "../types/auth";
+import type { ResidentialComplex } from "../types/user";
+import type { PermissionCode } from "../types/auth";
 import { CustomSelect, type SelectOption } from "../components/ui/Select";
+import { useNotifications } from "../notifications/useNotifications";
 
-const navItems = [
+const navItems: Array<{
+  label: string;
+  to: string;
+  permission: PermissionCode;
+  icon: LucideIcon;
+}> = [
   {
     label: "Dashboard",
     to: "/dashboard",
@@ -50,10 +58,19 @@ export function MainLayout() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const roleCode = session?.user?.roleCode ?? "ROLE_RESIDENT";
+  const canSwitchComplex =
+    roleCode === "ROLE_DEV" ||
+    roleCode === "ROLE_ORG_ADMIN" ||
+    roleCode === "ROLE_COMPLEX_ADMIN";
+
+  useNotifications({
+    accessToken: session?.accessToken,
+    residentialComplexId: session?.residentialComplexId,
+  });
 
   useEffect(() => {
     const loadComplexes = async () => {
-      if (!["ROLE_DEV", "ROLE_ORG_ADMIN"].includes(roleCode)) {
+      if (!canSwitchComplex) {
         return;
       }
 
@@ -69,7 +86,7 @@ export function MainLayout() {
     };
 
     void loadComplexes();
-  }, [roleCode]);
+  }, [canSwitchComplex]);
 
   // Mapeo dinámico de conjuntos a las opciones que espera el CustomSelect
   const complexOptions: SelectOption[] = useMemo(() => {
@@ -125,7 +142,7 @@ export function MainLayout() {
           {navItems.map((item) => (
             <Can
               key={item.to + item.label}
-              perform={item.permission as any}
+              perform={item.permission}
               fallback={null}
             >
               <NavLink
@@ -173,7 +190,7 @@ export function MainLayout() {
           </div>
 
           <div className="topbar-group">
-            {(roleCode === "ROLE_DEV" || roleCode === "ROLE_ORG_ADMIN") && (
+            {canSwitchComplex && (
               <CustomSelect
                 options={complexOptions}
                 value={session?.residentialComplexId ?? ""}
@@ -186,6 +203,7 @@ export function MainLayout() {
             )}
 
             <button
+              type="button"
               className="inline-button session-action-button"
               onClick={handleLogout}
               disabled={isLoggingOut}

@@ -1,7 +1,8 @@
 import axios from "axios";
 import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { APP_CONFIG } from "../config/app";
-import type { AuthState, ValidationErrorResponse } from "../types/auth";
+import { getStoredAuth } from "../auth/auth-storage";
+import type { ValidationErrorResponse } from "../types/auth";
 
 const api = axios.create({
   baseURL: APP_CONFIG.API_BASE_URL,
@@ -11,17 +12,8 @@ const api = axios.create({
   },
 });
 
-const parseStoredAuth = (): Partial<AuthState> | null => {
-  try {
-    const raw = localStorage.getItem(APP_CONFIG.AUTH_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-
 api.interceptors.request.use((config) => {
-  const auth = parseStoredAuth();
+  const auth = getStoredAuth();
   const token = auth?.accessToken;
 
   if (token) {
@@ -47,6 +39,14 @@ api.interceptors.response.use(
     if (status === 401 && !isPublicAuthFlow) {
       localStorage.removeItem(APP_CONFIG.AUTH_STORAGE_KEY);
       window.location.assign("/login");
+    }
+
+    if (
+      status === 403 &&
+      !isPublicAuthFlow &&
+      window.location.pathname !== "/dashboard"
+    ) {
+      window.location.assign("/dashboard");
     }
 
     return Promise.reject(error);

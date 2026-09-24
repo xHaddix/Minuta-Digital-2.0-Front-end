@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import api from "../services/api";
 import { APP_CONFIG } from "../config/app";
-import { switchComplex as switchComplexRequest } from "../services/auth-context";
-import type {
-  AuthState,
-  LoginResponse,
-  PermissionCode,
-  RoleCode,
-} from "../types/auth";
+import {
+  login as loginRequest,
+  switchComplex as switchComplexRequest,
+} from "../services/auth-service";
+import type { AuthState, PermissionCode, RoleCode } from "../types/auth";
 import {
   buildAuthState,
   clearStoredAuth,
@@ -139,10 +136,7 @@ export const useAuth = () => {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { data } = await api.post<LoginResponse>("/auth/login", {
-      email,
-      password,
-    });
+    const data = await loginRequest(email, password);
 
     const requiresContextSelection =
       data.user.roleCode === "ROLE_DEV" ||
@@ -159,6 +153,7 @@ export const useAuth = () => {
         ? null
         : (data.user.residentialComplexId ?? null),
       roleCode: data.user.roleCode,
+      contextSelected: !requiresContextSelection,
     });
 
     setStoredAuth(auth);
@@ -185,6 +180,7 @@ export const useAuth = () => {
       residentialComplexId:
         data.user?.residentialComplexId ?? residentialComplexId,
       roleCode: auth.roleCode ?? auth.user?.roleCode ?? null,
+      contextSelected: true,
     });
 
     setStoredAuth(nextAuth);

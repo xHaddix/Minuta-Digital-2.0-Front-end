@@ -39,19 +39,17 @@ export const CustomSelect: React.FC<SelectProps> = ({
         !containerRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
+        setSearchTerm("");
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Autofoco al abrir el buscador y limpieza al cerrar
+  // Autofoco al abrir el buscador
   useEffect(() => {
     if (isOpen && searchable && searchInputRef.current) {
       searchInputRef.current.focus();
-    }
-    if (!isOpen) {
-      setSearchTerm("");
     }
   }, [isOpen, searchable]);
 
@@ -68,7 +66,11 @@ export const CustomSelect: React.FC<SelectProps> = ({
       <button
         type="button"
         className={`custom-select-trigger ${isOpen ? "open" : ""}`}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={() => {
+          if (disabled) return;
+          setIsOpen(!isOpen);
+          if (isOpen) setSearchTerm("");
+        }}
         disabled={disabled}
       >
         <span>{selectedOption ? selectedOption.label : placeholder}</span>
@@ -106,6 +108,7 @@ export const CustomSelect: React.FC<SelectProps> = ({
                   onClick={() => {
                     onChange(option.value);
                     setIsOpen(false);
+                    setSearchTerm("");
                   }}
                 >
                   {option.label}

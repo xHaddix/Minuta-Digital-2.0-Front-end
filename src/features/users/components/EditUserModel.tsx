@@ -2,44 +2,40 @@ import React, { useEffect, useState } from "react";
 import {
   fetchDocumentTypes,
   fetchAssignableRoles,
-  fetchResidentialComplexes,
-  inviteUser,
+  updateUser,
 } from "../../../services/user-service";
 import { CustomSelect, type SelectOption } from "../../../components/ui/Select";
 import { CheckIcon } from "../../../components/icons/CheckIcon";
 import type {
   DocumentType,
-  InviteUserPayload,
-  ResidentialComplex,
   Role,
+  UpdateUserPayload,
+  User,
 } from "../../../types/user";
 
-interface InviteUserModalProps {
+interface EditUserModalProps {
   isOpen: boolean;
+  user: User | null;
   onClose: () => void;
-  onSuccess: (invitedEmail: string) => void;
-  currentUserRoleCode: string;
+  onSuccess: () => void;
 }
 
-export const InviteUserModal: React.FC<InviteUserModalProps> = ({
+export const EditUserModal: React.FC<EditUserModalProps> = ({
   isOpen,
+  user,
   onClose,
   onSuccess,
-  currentUserRoleCode,
 }) => {
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [complexes, setComplexes] = useState<ResidentialComplex[]>([]);
 
-  const [formData, setFormData] = useState<InviteUserPayload>({
+  const [formData, setFormData] = useState<UpdateUserPayload>({
     name: "",
-    email: "",
     phone: "",
     roleId: "",
-    organizationId: "",
-    residentialComplexId: "",
     documentTypeId: "",
     documentNumber: "",
+    status: 1,
   });
 
   const [loading, setLoading] = useState(false);
@@ -47,16 +43,22 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const isGlobalRole =
-    currentUserRoleCode === "ROLE_DEV" ||
-    currentUserRoleCode === "ROLE_ORG_ADMIN";
-
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen || !user) {
       setSuccessMessage(null);
       setError(null);
       return;
     }
+
+    // Precargar datos del usuario seleccionado
+    setFormData({
+      name: user.name || "",
+      phone: user.phone || "",
+      roleId: user.role?.id || "",
+      documentTypeId: user.documentType?.id || "",
+      documentNumber: user.documentNumber || "",
+      status: user.status,
+    });
 
     const loadCatalogs = async () => {
       setLoading(true);
@@ -66,85 +68,62 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
           fetchDocumentTypes(),
           fetchAssignableRoles(),
         ]);
-
         setDocumentTypes(docsData);
         setRoles(rolesData);
-
-        if (isGlobalRole) {
-          const complexesData = await fetchResidentialComplexes();
-          setComplexes(complexesData);
-        }
       } catch (err: unknown) {
         const message =
           err && typeof err === "object" && "response" in err
             ? (err as { response?: { data?: { message?: string } } }).response
                 ?.data?.message
             : undefined;
-        setError(message || "Error al cargar los catálogos requeridos.");
+        setError(message || "Error al cargar los catálogos del formulario.");
       } finally {
         setLoading(false);
       }
     };
 
     void loadCatalogs();
-  }, [isOpen, currentUserRoleCode, isGlobalRole]);
+  }, [isOpen, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!formData.roleId) {
-      setError("Debe seleccionar un rol para el usuario.");
-      return;
-    }
+    if (!user) return;
 
     setSubmitting(true);
     setError(null);
 
     try {
-      const payload: InviteUserPayload = {
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        roleId: formData.roleId,
-        ...(formData.phone?.trim() && { phone: formData.phone.trim() }),
-        ...(formData.documentTypeId && {
-          documentTypeId: formData.documentTypeId,
-        }),
-        ...(formData.documentNumber?.trim() && {
-          documentNumber: formData.documentNumber.trim(),
-        }),
-        ...(formData.residentialComplexId && {
-          residentialComplexId: formData.residentialComplexId,
-        }),
-        ...(formData.organizationId && {
-          organizationId: formData.organizationId,
-        }),
+      const payload: UpdateUserPayload = {
+        name: formData.name?.trim(),
+        phone: formData.phone?.trim() || undefined,
+        roleId: formData.roleId || undefined,
+        documentTypeId: formData.documentTypeId || undefined,
+        documentNumber: formData.documentNumber?.trim() || undefined,
+        status: Number(formData.status),
       };
 
-      await inviteUser(payload);
+      await updateUser(user.id, payload);
 
-      const invitedEmail = formData.email.trim();
-      setSuccessMessage(`¡Invitación enviada con éxito a ${invitedEmail}!`);
+      setSuccessMessage("¡Usuario actualizado correctamente!");
 
-      // Notificar a la vista padre y cerrar el modal tras 1.2 segundos
       setTimeout(() => {
-        onSuccess(invitedEmail);
+        onSuccess();
         onClose();
-      }, 1200);
+      }, 1000);
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "response" in err
           ? (err as { response?: { data?: { message?: string } } }).response
               ?.data?.message
           : undefined;
-      setError(message || "Ocurrió un error al procesar la invitación.");
+      setError(message || "Ocurrió un error al actualizar el usuario.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !user) return null;
 
-  // Filtramos la propiedad 'code' del label para mostrar únicamente el nombre amigable
   const roleOptions: SelectOption[] = roles.map((r) => ({
     value: r.id,
     label: r.name,
@@ -158,18 +137,18 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
     })),
   ];
 
-  const complexOptions: SelectOption[] = [
-    { value: "", label: "Seleccionar conjunto..." },
-    ...complexes.map((c) => ({
-      value: c.id,
-      label: c.name,
-    })),
+  const statusOptions: SelectOption[] = [
+    { value: "1", label: "Activo" },
+    { value: "0", label: "Inactivo" },
+    ...(user.status === 2
+      ? [{ value: "2", label: "Pendiente de Activación" }]
+      : []),
   ];
 
   return (
     <div className="modal-backdrop">
       <div className="modal-content overflow-visible">
-        <h2>Invitar Nuevo Usuario</h2>
+        <h2>Editar Usuario</h2>
 
         {error && <div className="dashboard-alert">{error}</div>}
         {successMessage && (
@@ -181,15 +160,24 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
         {loading ? (
           <div className="spinner-container">
             <div className="spinner"></div>
-            <span>Cargando opciones del formulario...</span>
+            <span>Cargando datos del usuario...</span>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="modal-form">
             <div className="form-group">
+              <label>Correo Electrónico (No editable)</label>
+              <input
+                type="email"
+                value={user.email}
+                disabled
+                className="input-disabled"
+              />
+            </div>
+
+            <div className="form-group">
               <label>Nombre Completo *</label>
               <input
                 type="text"
-                placeholder="Ej: Carlos Pérez"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -200,24 +188,9 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label>Correo Electrónico *</label>
-              <input
-                type="email"
-                placeholder="ejemplo@minutadigital.com"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                required
-                disabled={submitting || Boolean(successMessage)}
-              />
-            </div>
-
-            <div className="form-group">
               <label>Teléfono (Opcional)</label>
               <input
                 type="tel"
-                placeholder="+57 300 123 4567"
                 value={formData.phone}
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
@@ -227,28 +200,26 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label>Rol a Asignar *</label>
+              <label>Rol Asignado *</label>
               <CustomSelect
                 options={roleOptions}
-                value={formData.roleId}
+                value={formData.roleId || ""}
                 onChange={(val) => setFormData({ ...formData, roleId: val })}
                 placeholder="Seleccione un rol"
               />
             </div>
 
-            {isGlobalRole && (
-              <div className="form-group">
-                <label>Conjunto Residencial</label>
-                <CustomSelect
-                  options={complexOptions}
-                  value={formData.residentialComplexId || ""}
-                  onChange={(val) =>
-                    setFormData({ ...formData, residentialComplexId: val })
-                  }
-                  placeholder="Seleccione un conjunto"
-                />
-              </div>
-            )}
+            <div className="form-group">
+              <label>Estado del Usuario *</label>
+              <CustomSelect
+                options={statusOptions}
+                value={String(formData.status)}
+                onChange={(val) =>
+                  setFormData({ ...formData, status: Number(val) })
+                }
+                placeholder="Seleccione el estado"
+              />
+            </div>
 
             <div className="form-group">
               <label>Tipo de Documento (Opcional)</label>
@@ -266,7 +237,6 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
               <label>Número de Documento (Opcional)</label>
               <input
                 type="text"
-                placeholder="1234567890"
                 value={formData.documentNumber}
                 onChange={(e) =>
                   setFormData({ ...formData, documentNumber: e.target.value })
@@ -297,7 +267,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
                 className="inline-button"
                 disabled={submitting || Boolean(successMessage)}
               >
-                {submitting ? "Enviando..." : "Enviar Invitación"}
+                {submitting ? "Guardando..." : "Guardar Cambios"}
               </button>
             </div>
           </form>

@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
-import {
-  fetchUsers,
-  fetchVisitors,
-  markVisitorExit,
-} from "../../services/user-service";
-import type { UserListItem, VisitorListItem } from "../../types/auth";
+// Dominio Central: Usuarios
+import { fetchUsers } from "../../services/user-service";
+// Dominio Tenant-Schema: Visitantes
+import { fetchVisitors, markVisitorExit } from "../../services/visitor-service";
+import type { User } from "../../types/user";
+import type { VisitorListItem } from "../../types/visitor";
 import { CustomSelect, type SelectOption } from "../../components/ui/Select";
 
 const formatTime = (value?: string | null) => {
@@ -29,7 +29,7 @@ const VISITOR_FILTER_OPTIONS: SelectOption[] = [
 export function DashboardPage() {
   const { session, can } = useAuth();
   const [visitors, setVisitors] = useState<VisitorListItem[]>([]);
-  const [users, setUsers] = useState<UserListItem[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [processingVisitorId, setProcessingVisitorId] = useState<string | null>(
@@ -39,7 +39,7 @@ export function DashboardPage() {
   // Estado para el selector animado de filtro de la tabla
   const [visitorFilter, setVisitorFilter] = useState("ALL");
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -76,11 +76,11 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [can]);
 
   useEffect(() => {
     void loadDashboardData();
-  }, [session?.residentialComplexId, session?.accessToken]);
+  }, [loadDashboardData, session?.residentialComplexId, session?.accessToken]);
 
   const filteredVisitors = useMemo(() => {
     if (visitorFilter === "INSIDE") {
@@ -95,11 +95,9 @@ export function DashboardPage() {
   const metrics = useMemo(() => {
     const activeVisitors = visitors.filter((item) => !item.exitTime).length;
 
+    // Evaluamos el status numérico real de PostgreSQL (2 = PENDIENTE, 0 = INACTIVO)
     const pendingUsers = users.filter(
-      (item) =>
-        item.status === "PENDING" ||
-        item.status === "INACTIVE" ||
-        (item.status as unknown) === 0,
+      (item) => item.status === 2 || item.status === 0,
     ).length;
 
     return [
@@ -156,7 +154,6 @@ export function DashboardPage() {
         <div className="section-header">
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             <h3>Visitas del conjunto</h3>
-            {/* Integracion del CustomSelect animado para el filtro */}
             <CustomSelect
               options={VISITOR_FILTER_OPTIONS}
               value={visitorFilter}

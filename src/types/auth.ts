@@ -35,23 +35,14 @@ export type PermissionCode =
   | "pqrs:close"
   | "events:read"
   | "events:create"
+  | "marketplace:read"
+  | "marketplace:create"
+  | "marketplace:manage_own"
+  | "marketplace:moderate"
   | "complexes:manage"
   | "organizations:manage";
 
-// 2. CATÁLOGOS AUXILIARES
-export interface DocumentTypeInfo {
-  id: string;
-  code: string;
-  description?: string | null;
-}
-
-export interface RoleInfo {
-  id: string;
-  code: RoleCode;
-  name: string;
-}
-
-// 3. ENTIDADES DE DOMINIO BASE (Single Source of Truth)
+// 2. ENTIDADES DE DOMINIO BASE
 export interface Organization {
   id: string;
   name: string;
@@ -63,22 +54,7 @@ export interface Organization {
   updatedAt?: string;
 }
 
-export interface ResidentialComplex {
-  id: string;
-  name: string;
-  slug?: string;
-  organizationId?: string;
-  urlLogo?: string | null;
-  logoUrl?: string | null; // Sostener por retrocompatibilidad UI
-  contactEmail?: string;
-  contactPhone?: string | null;
-  status?: number | string;
-  planCode?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// 4. ENTIDAD USUARIO Y DERIVACIONES DE VISTA
+// 3. ENTIDAD USUARIO DE SESIÓN
 export interface BaseUser {
   id: string;
   email: string;
@@ -93,17 +69,7 @@ export interface UserSession extends BaseUser {
   roleName?: string;
 }
 
-/// Usado en la tabla / listado de usuarios del Dashboard
-export interface UserListItem extends BaseUser {
-  phone?: string | null;
-  status?: number | string;
-  documentNumber?: string | null;
-  createdAt?: string;
-  role?: RoleInfo;
-  documentType?: DocumentTypeInfo | null;
-}
-
-// 5. AUTENTICACIÓN Y CONTEXTO MULTI-TENANT
+// 4. AUTENTICACIÓN Y CONTEXTO MULTI-TENANT
 export interface JwtPayload {
   sub: string;
   email: string;
@@ -115,7 +81,7 @@ export interface JwtPayload {
 export interface LoginResponse {
   accessToken: string;
   user: UserSession;
-  permissions?: PermissionCode[];
+  permissions: PermissionCode[];
 }
 
 export interface AuthState {
@@ -126,6 +92,7 @@ export interface AuthState {
   organizationId: string | null;
   residentialComplexId: string | null;
   roleCode: RoleCode | null;
+  contextSelected?: boolean;
 }
 
 export interface SwitchComplexRequest {
@@ -134,30 +101,12 @@ export interface SwitchComplexRequest {
 
 export interface SwitchComplexResponse {
   accessToken: string;
-  permissions?: PermissionCode[];
-  user?: UserSession;
+  permissions: PermissionCode[];
+  user: UserSession;
 }
 
 export interface ValidationErrorResponse {
   message: string[] | string;
   error?: string;
   statusCode?: number;
-}
-
-// 6. DOMINIO OPERATIVO (Visitantes)
-export interface VisitorListItem {
-  id: string;
-  fullName: string;
-  documentNumber?: string | null;
-  unitNumber?: string | null;
-  unitTarget?: string | null;
-  entryTime?: string | null;
-  exitTime?: string | null;
-  status?: "active" | "closed" | string;
-  createdAt?: string;
-  authorizerUser?: {
-    id: string;
-    name: string;
-    email: string;
-  } | null;
 }

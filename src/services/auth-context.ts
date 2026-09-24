@@ -1,11 +1,7 @@
 import api from "./api";
 import { AUTH_ENDPOINTS } from "../config/app";
-import type {
-  Organization,
-  ResidentialComplex,
-  SwitchComplexRequest,
-  SwitchComplexResponse,
-} from "../types/auth";
+import type { Organization } from "../types/auth";
+import type { ResidentialComplex } from "../types/user";
 
 export const fetchOrganizations = async () => {
   const response = await api.get<Organization[]>(AUTH_ENDPOINTS.organizations);
@@ -22,17 +18,6 @@ export const fetchResidentialComplexes = async (
           params: { organizationId },
         }
       : undefined,
-  );
-
-  return response.data;
-};
-
-export const switchComplex = async (residentialComplexId: string) => {
-  const response = await api.post<SwitchComplexResponse>(
-    AUTH_ENDPOINTS.switchComplex,
-    {
-      residentialComplexId,
-    } satisfies SwitchComplexRequest,
   );
 
   return response.data;

@@ -17,6 +17,7 @@ export const FRONTEND_URL =
 
 export const APP_CONFIG = {
   API_BASE_URL: resolvedApiBaseUrl,
+  SOCKET_BASE_URL: resolvedApiBaseUrl.replace(/\/api$/, ""),
   AUTH_STORAGE_KEY: "minuta-digital-auth",
   SESSION_STORAGE_KEY: "minuta-digital-session",
 };
