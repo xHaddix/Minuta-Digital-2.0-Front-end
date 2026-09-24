@@ -4,6 +4,7 @@ import {
   login as loginRequest,
   switchComplex as switchComplexRequest,
 } from "../services/auth-service";
+import { setApiAccessToken } from "../services/api";
 import type { AuthState, PermissionCode, RoleCode } from "../types/auth";
 import {
   buildAuthState,
@@ -115,7 +116,9 @@ export const useAuth = () => {
 
   useEffect(() => {
     const handleAuthChange = () => {
-      setSession(getStoredAuth());
+      const auth = getStoredAuth();
+      setApiAccessToken(auth?.accessToken ?? null);
+      setSession(auth);
     };
 
     window.addEventListener("storage", handleAuthChange);
@@ -132,6 +135,7 @@ export const useAuth = () => {
 
   const syncSession = useCallback(() => {
     const nextAuth = getStoredAuth();
+    setApiAccessToken(nextAuth?.accessToken ?? null);
     setSession(nextAuth);
     return nextAuth;
   }, []);
@@ -159,6 +163,7 @@ export const useAuth = () => {
       });
 
       setStoredAuthWithPreference(auth, rememberMe);
+      setApiAccessToken(auth.accessToken);
       setSession(auth);
       return data;
     },
@@ -206,6 +211,7 @@ export const useAuth = () => {
       });
 
       setStoredAuthWithPreference(nextAuth, isAuthRemembered());
+      setApiAccessToken(nextAuth.accessToken);
       setSession(nextAuth);
       return nextAuth;
     },
@@ -214,6 +220,7 @@ export const useAuth = () => {
 
   const logout = useCallback(() => {
     clearStoredAuth();
+    setApiAccessToken(null);
     setSession(null);
     window.location.assign("/login");
   }, []);
@@ -264,6 +271,7 @@ export const useAuth = () => {
     isAuthenticated,
     clearAuth: () => {
       clearStoredAuth();
+      setApiAccessToken(null);
       setSession(null);
     },
     syncSession,

@@ -12,14 +12,26 @@ const api = axios.create({
   },
 });
 
-api.interceptors.request.use((config) => {
-  const auth = getStoredAuth();
-  const token = auth?.accessToken;
+let activeAccessToken: string | null | undefined;
 
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
+export const setApiAccessToken = (accessToken: string | null) => {
+  activeAccessToken = accessToken;
+  if (accessToken) {
+    api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+  } else {
+    delete api.defaults.headers.common.Authorization;
   }
+};
+
+api.interceptors.request.use((config) => {
+  const token =
+    activeAccessToken === undefined
+      ? getStoredAuth()?.accessToken
+      : activeAccessToken;
+
+  config.headers = config.headers ?? {};
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  else delete config.headers.Authorization;
 
   return config;
 });
@@ -37,6 +49,7 @@ api.interceptors.response.use(
       requestUrl.includes("/auth/reset-password");
 
     if (status === 401 && !isPublicAuthFlow) {
+      setApiAccessToken(null);
       clearStoredAuth();
       window.location.assign("/login");
     }

@@ -1751,12 +1751,111 @@
 
 .apartments-residents-list {
   max-width: 180px;
-  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
   color: #dce8ff;
   font-size: 0.82rem;
   line-height: 1.35;
+}
+
+.apartment-resident-chip,
+.apartment-resident-more,
+.apartment-resident-manage {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 3px 8px;
+  border: 1px solid rgba(149, 176, 234, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #dce8ff;
+  font: inherit;
+}
+
+.apartment-resident-chip {
+  max-width: 150px;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.apartment-resident-more,
+.apartment-resident-manage {
+  justify-content: center;
+  cursor: pointer;
+}
+
+.apartment-resident-more {
+  min-width: 34px;
+  border-color: rgba(123, 151, 255, 0.35);
+  background: rgba(95, 126, 255, 0.14);
+  color: #afc1ff;
+  font-weight: 700;
+}
+
+.apartment-resident-manage {
+  width: 27px;
+  padding: 3px;
+  color: #a9bbdf;
+}
+
+.apartment-residents-modal {
+  max-width: 540px;
+}
+
+.apartment-resident-list {
+  display: grid;
+  gap: 8px;
+  max-height: 280px;
+  margin: 16px 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.apartment-resident-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(149, 176, 234, 0.14);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.apartment-resident-list li > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.apartment-resident-list li strong,
+.apartment-resident-list li small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.apartment-resident-list li small,
+.apartment-resident-api-note {
+  color: rgba(188, 207, 239, 0.62);
+  font-size: 0.78rem;
+}
+
+.apartment-resident-remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.apartment-resident-api-note {
+  margin: 12px 0 16px;
+}
+
+.apartment-resident-error {
+  color: #fca5a5;
 }
 
 .apartments-type-badge {

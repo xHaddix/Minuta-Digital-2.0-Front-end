@@ -6,6 +6,7 @@ import {
   Plus,
   RotateCcw,
   Trash2,
+  UsersRound,
   UserRoundPlus,
 } from "lucide-react";
 import { CustomSelect, type SelectOption } from "../../components/ui/Select";
@@ -17,13 +18,18 @@ import {
 } from "../../services/apartment-service";
 import {
   assignResidentApartment,
+  createResidentForApartment,
   fetchResidents,
+  unassignResidentApartment,
 } from "../../services/resident-service";
+import { fetchUsers } from "../../services/user-service";
 import type {
   ApartmentListItem,
   ApartmentPayload,
 } from "../../types/apartment";
 import type { ResidentListItem } from "../../types/resident";
+import type { User } from "../../types/user";
+import { useAuth } from "../../auth/useAuth";
 
 const emptyForm: ApartmentPayload = {
   tower: "",
@@ -38,6 +44,7 @@ const apartmentTypeOptions: SelectOption[] = [
 ];
 
 export function ApartmentsPage() {
+  const { session } = useAuth();
   const [apartments, setApartments] = useState<ApartmentListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -48,10 +55,62 @@ export function ApartmentsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [residents, setResidents] = useState<ResidentListItem[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingResidents, setLoadingResidents] = useState(true);
   const [assignmentApartment, setAssignmentApartment] =
     useState<ApartmentListItem | null>(null);
+  const [managingResidentsApartment, setManagingResidentsApartment] =
+    useState<ApartmentListItem | null>(null);
+  const [removingResidentId, setRemovingResidentId] = useState<string | null>(
+    null,
+  );
+  const [residentActionError, setResidentActionError] = useState("");
   const [selectedResidentId, setSelectedResidentId] = useState("");
   const [assigning, setAssigning] = useState(false);
+
+  const scopedResidents = useMemo(() => {
+    const activeComplexId = session?.residentialComplexId;
+    if (!activeComplexId) return [];
+
+    const activeApartmentIds = new Set(
+      apartments.map((apartment) => apartment.id),
+    );
+
+    return residents.filter((resident) => {
+      const residentComplexId =
+        resident.residentialComplexId ?? resident.complexId;
+      if (residentComplexId) return residentComplexId === activeComplexId;
+      if (resident.apartmentId) {
+        return activeApartmentIds.has(resident.apartmentId);
+      }
+
+      // The API scopes residents by the active JWT. Older payloads omit both
+      // complexId and apartmentId, so keep those records from that scoped API.
+      return true;
+    });
+  }, [apartments, residents, session?.residentialComplexId]);
+
+  const assignableResidents = useMemo(() => {
+    const activeComplexId = session?.residentialComplexId;
+    if (!activeComplexId) return [];
+
+    return users
+      .filter(
+        (user) =>
+          user.role?.code === "ROLE_RESIDENT" && user.status !== 0,
+      )
+      .map((user) => ({
+        user,
+        resident: scopedResidents.find(
+          (resident) => resident.user?.id === user.id,
+        ),
+      }))
+      .filter(
+        ({ user, resident }) =>
+          user.residentialComplexId === activeComplexId || Boolean(resident),
+      )
+      .sort((first, second) => first.user.name.localeCompare(second.user.name));
+  }, [scopedResidents, session?.residentialComplexId, users]);
 
   const loadApartments = async () => {
     setLoading(true);
@@ -66,11 +125,25 @@ export function ApartmentsPage() {
   };
 
   useEffect(() => {
+    setApartments([]);
+    setResidents([]);
+    setUsers([]);
+    setLoadingResidents(true);
+    setAssignmentApartment(null);
+    setManagingResidentsApartment(null);
+    setSelectedResidentId("");
     void loadApartments();
-    void fetchResidents()
-      .then(setResidents)
-      .catch(() => setResidents([]));
-  }, []);
+    void Promise.all([fetchResidents(), fetchUsers()])
+      .then(([nextResidents, nextUsers]) => {
+        setResidents(nextResidents);
+        setUsers(nextUsers);
+      })
+      .catch(() => {
+        setResidents([]);
+        setUsers([]);
+      })
+      .finally(() => setLoadingResidents(false));
+  }, [session?.residentialComplexId]);
 
   const filteredApartments = useMemo(() => {
     if (statusFilter === "ACTIVE") {
@@ -89,6 +162,13 @@ export function ApartmentsPage() {
     }
     return apartments;
   }, [apartments, statusFilter]);
+
+  const getApartmentResidents = (apartment: ApartmentListItem) =>
+    scopedResidents.filter(
+      (resident) =>
+        resident.apartmentId === apartment.id ||
+        (!resident.apartmentId && resident.unitNumber === apartment.unitNumber),
+    );
 
   const openCreateModal = () => {
     setEditingApartment(null);
@@ -112,6 +192,30 @@ export function ApartmentsPage() {
     setSelectedResidentId("");
   };
 
+  const handleUnassignResident = async (residentId: string) => {
+    if (!managingResidentsApartment) return;
+
+    setRemovingResidentId(residentId);
+    setResidentActionError("");
+    try {
+      await unassignResidentApartment(residentId);
+      const [nextApartments, nextResidents, nextUsers] = await Promise.all([
+        fetchApartments(true),
+        fetchResidents(),
+        fetchUsers(),
+      ]);
+      setApartments(nextApartments);
+      setResidents(nextResidents);
+      setUsers(nextUsers);
+    } catch {
+      setResidentActionError(
+        "No fue posible quitar al residente de esta unidad.",
+      );
+    } finally {
+      setRemovingResidentId(null);
+    }
+  };
+
   const handleAssignResident = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!assignmentApartment || !selectedResidentId) return;
@@ -119,13 +223,34 @@ export function ApartmentsPage() {
     setAssigning(true);
     setError("");
     try {
-      await assignResidentApartment(selectedResidentId, assignmentApartment.id);
+      const selectedResident = assignableResidents.find(
+        ({ user }) => user.id === selectedResidentId,
+      );
+      if (!selectedResident) {
+        throw new Error("El residente ya no está disponible en este conjunto");
+      }
+
+      if (selectedResident.resident) {
+        await assignResidentApartment(
+          selectedResident.resident.id,
+          assignmentApartment.id,
+        );
+      } else {
+        await createResidentForApartment(
+          selectedResident.user.id,
+          assignmentApartment.id,
+        );
+      }
+
       setAssignmentApartment(null);
       setSelectedResidentId("");
-      await Promise.all([
-        loadApartments(),
-        fetchResidents().then(setResidents),
+      await loadApartments();
+      const [nextResidents, nextUsers] = await Promise.all([
+        fetchResidents(),
+        fetchUsers(),
       ]);
+      setResidents(nextResidents);
+      setUsers(nextUsers);
     } catch {
       setError("No fue posible asignar el residente al apartamento.");
     } finally {
@@ -314,11 +439,17 @@ export function ApartmentsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredApartments.map((apartment) => (
-                  <tr
-                    key={apartment.id}
-                    style={{ background: "rgba(255,255,255,0.02)" }}
-                  >
+                filteredApartments.map((apartment) => {
+                  const apartmentResidents = getApartmentResidents(apartment);
+                  const visibleResidents = apartmentResidents.slice(0, 2);
+                  const extraResidentsCount =
+                    apartmentResidents.length - visibleResidents.length;
+
+                  return (
+                    <tr
+                      key={apartment.id}
+                      style={{ background: "rgba(255,255,255,0.02)" }}
+                    >
                     <td
                       style={{
                         padding: "0.75rem 1rem",
@@ -343,17 +474,46 @@ export function ApartmentsPage() {
                       </span>
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
-                      <div className="apartments-residents-list">
-                        {residents
-                          .filter(
-                            (resident) =>
-                              resident.apartmentId === apartment.id ||
-                              (!resident.apartmentId &&
-                                resident.unitNumber === apartment.unitNumber),
-                          )
-                          .map((resident) => resident.user?.name ?? "Residente")
-                          .join(", ") || "Sin asignar"}
-                      </div>
+                      {apartmentResidents.length === 0 ? (
+                        <span className="apartments-cell-muted">Sin asignar</span>
+                      ) : (
+                        <div className="apartments-residents-list">
+                          {visibleResidents.map((resident) => (
+                            <span
+                              className="apartment-resident-chip"
+                              key={resident.id}
+                              title={resident.user?.email}
+                            >
+                              {resident.user?.name ?? "Residente"}
+                            </span>
+                          ))}
+                          {extraResidentsCount > 0 ? (
+                            <button
+                              type="button"
+                              className="apartment-resident-more"
+                              onClick={() =>
+                                setManagingResidentsApartment(apartment)
+                              }
+                              title={`Ver los ${apartmentResidents.length} residentes`}
+                            >
+                              +{extraResidentsCount}
+                            </button>
+                          ) : null}
+                          {apartmentResidents.length <= 2 ? (
+                            <button
+                              type="button"
+                              className="apartment-resident-manage"
+                              onClick={() =>
+                                setManagingResidentsApartment(apartment)
+                              }
+                              aria-label={`Administrar residentes de ${apartment.unitNumber}`}
+                              title="Ver residentes"
+                            >
+                              <UsersRound size={14} />
+                            </button>
+                          ) : null}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
                       <span
@@ -416,8 +576,9 @@ export function ApartmentsPage() {
                         </button>
                       </div>
                     </td>
-                  </tr>
-                ))
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -509,19 +670,30 @@ export function ApartmentsPage() {
               <div className="form-group">
                 <label>Residente</label>
                 <CustomSelect
-                  options={residents.map((resident) => ({
-                    value: resident.id,
-                    label: resident.user
-                      ? `${resident.user.name} · ${resident.user.email}`
-                      : resident.unitNumber,
+                  options={assignableResidents.map(({ user }) => ({
+                    value: user.id,
+                    label: `${user.name} · ${user.email}`,
                   }))}
                   value={selectedResidentId}
                   onChange={setSelectedResidentId}
-                  placeholder="Seleccione un residente"
+                  placeholder={
+                    loadingResidents
+                      ? "Cargando residentes..."
+                      : "Seleccione un residente"
+                  }
                   searchable
                   searchPlaceholder="Buscar residente..."
-                  disabled={assigning}
+                  disabled={
+                    assigning ||
+                    loadingResidents ||
+                    assignableResidents.length === 0
+                  }
                 />
+                {!loadingResidents && assignableResidents.length === 0 ? (
+                  <small className="apartments-cell-muted">
+                    No hay usuarios con rol residente asociados al conjunto activo.
+                  </small>
+                ) : null}
               </div>
               <div className="modal-actions">
                 <button
@@ -535,12 +707,75 @@ export function ApartmentsPage() {
                 <button
                   type="submit"
                   className="inline-button"
-                  disabled={assigning || !selectedResidentId}
+                  disabled={
+                    assigning || loadingResidents || !selectedResidentId
+                  }
                 >
                   {assigning ? "Asignando..." : "Asignar residente"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {managingResidentsApartment ? (
+        <div className="modal-backdrop">
+          <div className="modal-content apartment-residents-modal">
+            <h2>Residentes asignados</h2>
+            <p className="apartments-modal-context">
+              Unidad: <strong>{managingResidentsApartment.unitNumber}</strong>
+            </p>
+            <ul className="apartment-resident-list">
+              {getApartmentResidents(managingResidentsApartment).map(
+                (resident) => (
+                  <li key={resident.id}>
+                    <div>
+                      <strong>{resident.user?.name ?? "Residente"}</strong>
+                      {resident.user?.email ? (
+                        <small>{resident.user.email}</small>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      className="secondary-button apartment-resident-remove"
+                      onClick={() => void handleUnassignResident(resident.id)}
+                      disabled={removingResidentId === resident.id}
+                      title="Quitar residente de esta unidad"
+                    >
+                      {removingResidentId === resident.id
+                        ? "Quitando..."
+                        : "Quitar"}
+                    </button>
+                  </li>
+                ),
+              )}
+            </ul>
+            {residentActionError ? (
+              <p className="apartment-resident-api-note apartment-resident-error">
+                {residentActionError}
+              </p>
+            ) : null}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setManagingResidentsApartment(null)}
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                className="inline-button"
+                onClick={() => {
+                  const apartment = managingResidentsApartment;
+                  setManagingResidentsApartment(null);
+                  openAssignmentModal(apartment);
+                }}
+              >
+                Asignar otro residente
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

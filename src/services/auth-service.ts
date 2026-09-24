@@ -1,4 +1,4 @@
-import api from "./api";
+import api, { setApiAccessToken } from "./api";
 import { AUTH_ENDPOINTS } from "../config/app";
 import type {
   LoginResponse,
@@ -15,6 +15,7 @@ export const login = async (
     password,
   });
 
+  setApiAccessToken(response.data.accessToken);
   return response.data;
 };
 
@@ -27,5 +28,6 @@ export const switchComplex = async (
     payload,
   );
 
+  setApiAccessToken(response.data.accessToken);
   return response.data;
 };

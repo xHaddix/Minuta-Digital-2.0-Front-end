@@ -7,6 +7,18 @@ export const fetchResidents = async (): Promise<ResidentListItem[]> => {
   return response.data;
 };
 
+export const createResidentForApartment = async (
+  userId: string,
+  apartmentId: string,
+): Promise<ResidentListItem> => {
+  const response = await api.post<ResidentListItem>(AUTH_ENDPOINTS.residents, {
+    userId,
+    apartmentId,
+    isOwner: false,
+  });
+  return response.data;
+};
+
 export const assignResidentApartment = async (
   residentId: string,
   apartmentId: string,
@@ -14,6 +26,15 @@ export const assignResidentApartment = async (
   const response = await api.patch<ResidentListItem>(
     `${AUTH_ENDPOINTS.residents}/${residentId}/apartment`,
     { apartmentId },
+  );
+  return response.data;
+};
+
+export const unassignResidentApartment = async (
+  residentId: string,
+): Promise<ResidentListItem> => {
+  const response = await api.delete<ResidentListItem>(
+    `${AUTH_ENDPOINTS.residents}/${residentId}/apartment`,
   );
   return response.data;
 };
