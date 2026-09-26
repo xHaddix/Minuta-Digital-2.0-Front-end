@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { X } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 import { CustomSelect, type SelectOption } from "../../components/ui/Select";
 import { ImageUploadField } from "../../components/ui/ImageUploadField";
 import { roleLabels } from "../../config/app";
@@ -45,12 +45,14 @@ export function UserProfileModal({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUpdated, setIsUpdated] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setIsUpdated(false);
 
     void Promise.all([fetchOwnProfile(), fetchDocumentTypes()])
       .then(([user, types]) => {
@@ -105,7 +107,7 @@ export function UserProfileModal({
         finalUser = { ...updatedUser, imgProfile: avatar.imgProfile };
       }
       onSaved(finalUser);
-      onClose();
+      setIsUpdated(true);
     } catch (saveError: unknown) {
       setError(getErrorMessage(saveError));
     } finally {
@@ -114,6 +116,7 @@ export function UserProfileModal({
   };
 
   const roleCode = profile?.role?.code;
+  const isResident = roleCode === "ROLE_RESIDENT";
 
   return (
     <div className="modal-backdrop profile-modal-backdrop">
@@ -144,11 +147,13 @@ export function UserProfileModal({
           <div className="spinner-container"><div className="spinner" /><span>Cargando perfil...</span></div>
         ) : (
           <form className="modal-form" onSubmit={handleSubmit}>
-            <div className="profile-summary-grid">
-              <div><span>Rol</span><strong>{roleCode ? roleLabels[roleCode] ?? roleCode : "—"}</strong></div>
-              <div><span>Organización</span><strong>{organizationName || "—"}</strong></div>
-              <div><span>Conjunto residencial</span><strong>{residentialComplexName || "—"}</strong></div>
-            </div>
+            {!isResident && (
+              <div className="profile-summary-grid">
+                  <div><span>Rol</span><strong>{roleCode ? roleLabels[roleCode] ?? roleCode : "—"}</strong></div>
+                  <div><span>Organización</span><strong>{organizationName || "—"}</strong></div>
+                  <div><span>Conjunto residencial</span><strong>{residentialComplexName || "—"}</strong></div>
+              </div>
+            )}
 
             <ImageUploadField
               name={name || profile?.name || "Usuario"}
@@ -186,6 +191,23 @@ export function UserProfileModal({
           </form>
         )}
       </section>
+      {isUpdated && (
+        <div className="profile-success-backdrop">
+          <section
+            className="profile-success-modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="profile-success-title"
+          >
+            <CheckCircle2 size={46} strokeWidth={1.8} aria-hidden="true" />
+            <h2 id="profile-success-title">¡Actualizado correctamente!</h2>
+            <p>Tu información de perfil se guardó correctamente.</p>
+            <button type="button" className="inline-button" onClick={onClose}>
+              Entendido
+            </button>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

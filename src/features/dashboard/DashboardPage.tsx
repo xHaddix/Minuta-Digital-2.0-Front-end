@@ -124,6 +124,15 @@ export function DashboardPage() {
     ];
   }, [users, visitors]);
 
+  const visibleMetrics =
+    session?.roleCode === "ROLE_RESIDENT"
+      ? metrics.filter(
+          (card) =>
+            card.title !== "Activos en conjunto" &&
+            card.title !== "Usuarios del conjunto",
+        )
+      : metrics;
+
   const handleCheckOut = async (visitorId: string) => {
     try {
       setProcessingVisitorId(visitorId);
@@ -139,7 +148,7 @@ export function DashboardPage() {
   return (
     <div className="dashboard-view">
       <div className="dashboard-grid">
-        {metrics.map((card) => (
+        {visibleMetrics.map((card) => (
           <article key={card.title} className="metric-card">
             <div className="label">{card.title}</div>
             <div className="value">{card.value}</div>
