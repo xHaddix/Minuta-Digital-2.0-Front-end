@@ -7,6 +7,7 @@ import type {
   ResidentialComplex,
   Role,
   UpdateUserPayload,
+  UpdateOwnProfilePayload,
   User,
 } from "../types/user";
 
@@ -70,6 +71,18 @@ export const updateUser = async (
   payload: UpdateUserPayload,
 ): Promise<User> => {
   const response = await api.patch<User>(`/users/${id}`, payload);
+  return response.data;
+};
+
+export const fetchOwnProfile = async (): Promise<User> => {
+  const response = await api.get<User>("/users/me");
+  return response.data;
+};
+
+export const updateOwnProfile = async (
+  payload: UpdateOwnProfilePayload,
+): Promise<User> => {
+  const response = await api.patch<User>("/users/me", payload);
   return response.data;
 };
 

@@ -1,11 +1,10 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 import {
   Building2,
   ChevronDown,
   // FileText,
   LayoutDashboard,
   LogOut,
-  Camera,
   UserRound,
   UsersRound,
   type LucideIcon,
@@ -22,11 +21,7 @@ import {
 import type { Organization, PermissionCode } from "../types/auth";
 import type { ResidentialComplex } from "../types/user";
 import { useNotifications } from "../notifications/useNotifications";
-import {
-  uploadUserAvatar,
-  validateImageFile,
-} from "../services/storage-service";
-import { AvatarImage } from "../components/ui/AvatarImage";
+import { UserProfileModal } from "../features/profile/UserProfileModal";
 
 const navItems: Array<{
   label: string;
@@ -79,11 +74,10 @@ const navItems: Array<{
 ];
 
 export function MainLayout() {
-  const { session, logout, setProfileImage } = useAuth();
+  const { session, logout, setProfileName } = useAuth();
   const [isContextSelectorOpen, setIsContextSelectorOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
   const [contextNames, setContextNames] = useState({
     organizationName: session?.organizationName ?? null,
     residentialComplexName: session?.residentialComplexName ?? null,
@@ -94,10 +88,6 @@ export function MainLayout() {
     roleCode === "ROLE_DEV" ||
     roleCode === "ROLE_ORG_ADMIN" ||
     roleCode === "ROLE_COMPLEX_ADMIN";
-  const canUploadOwnAvatar =
-    roleCode === "ROLE_COMPLEX_ADMIN" ||
-    roleCode === "ROLE_SECURITY" ||
-    roleCode === "ROLE_RESIDENT";
 
   useEffect(() => {
     let isCancelled = false;
@@ -171,34 +161,18 @@ export function MainLayout() {
     logout();
   };
 
-  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file || !session?.user?.id) return;
-
-    try {
-      validateImageFile(file);
-      setAvatarError(null);
-      setIsUploadingAvatar(true);
-      const updatedUser = await uploadUserAvatar(session.user.id, file);
-      setProfileImage(updatedUser.imgProfile);
-    } catch (error) {
-      setAvatarError(
-        error instanceof Error
-          ? error.message
-          : "No se pudo actualizar la foto.",
-      );
-    } finally {
-      setIsUploadingAvatar(false);
-    }
-  };
-
   return (
     <div className="layout-shell">
       {isContextSelectorOpen ? (
         <ContextSelectorModal onClose={() => setIsContextSelectorOpen(false)} />
       ) : null}
+      <UserProfileModal
+        isOpen={isProfileOpen}
+        organizationName={contextNames.organizationName}
+        residentialComplexName={contextNames.residentialComplexName}
+        onClose={() => setIsProfileOpen(false)}
+        onSaved={(user) => setProfileName(user.name)}
+      />
       {isLoggingOut ? (
         <div
           className="auth-transition-overlay auth-transition-overlay--logout"
@@ -264,47 +238,22 @@ export function MainLayout() {
       <main className="workspace">
         <header className="topbar">
           <div className="topbar-group">
-            <div className="user-pill">
-              {canUploadOwnAvatar ? (
-                <label
-                  className="avatar avatar-upload"
-                  title="Cambiar foto de perfil"
-                >
-                  <AvatarImage
-                    src={session?.user?.imgProfile}
-                    name={session?.user?.name ?? "Usuario"}
-                    size={38}
-                  />
-                  <span className="avatar-upload-indicator" aria-hidden="true">
-                    <Camera size={12} />
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    aria-label="Cambiar foto de perfil"
-                    onChange={handleAvatarChange}
-                    disabled={isUploadingAvatar}
-                    hidden
-                  />
-                </label>
-              ) : (
-                <div className="avatar">
-                  <AvatarImage
-                    src={session?.user?.imgProfile}
-                    name={session?.user?.name ?? "Usuario"}
-                    size={38}
-                  />
-                </div>
-              )}
+            <button
+              type="button"
+              className="user-pill user-pill-button"
+              onClick={() => setIsProfileOpen(true)}
+              aria-label="Ver y editar mi perfil"
+            >
+              <span className="user-pill-icon" aria-hidden="true">
+                <UserRound size={20} />
+              </span>
               <div>
                 <div className="text-muted">
                   {roleLabels[roleCode] ?? roleCode}
                 </div>
                 <strong>{session?.user?.name ?? "Admin Demo"}</strong>
-                {isUploadingAvatar && <small>Subiendo foto...</small>}
-                {avatarError && <small role="alert">{avatarError}</small>}
               </div>
-            </div>
+            </button>
           </div>
 
           <div className="topbar-group">

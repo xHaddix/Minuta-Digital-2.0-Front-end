@@ -82,3 +82,10 @@ export interface UpdateUserPayload {
   documentNumber?: string;
   status?: number;
 }
+
+export interface UpdateOwnProfilePayload {
+  name: string;
+  phone: string | null;
+  documentTypeId: string | null;
+  documentNumber: string | null;
+}

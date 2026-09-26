@@ -225,13 +225,13 @@ export const useAuth = () => {
     window.location.assign("/login");
   }, []);
 
-  const setProfileImage = useCallback((imgProfile: string | null) => {
+  const setProfileName = useCallback((name: string) => {
     const auth = getStoredAuth();
     if (!auth?.user) return;
 
     const nextAuth = {
       ...auth,
-      user: { ...auth.user, imgProfile },
+      user: { ...auth.user, name },
     };
     setStoredAuthWithPreference(nextAuth, isAuthRemembered());
     setSession(nextAuth);
@@ -275,7 +275,7 @@ export const useAuth = () => {
     session,
     login,
     switchComplex,
-    setProfileImage,
+    setProfileName,
     logout,
     can,
     canAny,

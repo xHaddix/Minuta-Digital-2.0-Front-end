@@ -48,6 +48,12 @@ export const uploadUserAvatar = (userId: string, file: File) =>
     file,
   );
 
+export const uploadOwnUserAvatar = (file: File) =>
+  uploadMultipart<{ id: string; imgProfile: string | null }>(
+    "/users/me/avatar",
+    file,
+  );
+
 export const validateImageFile = (file: File) => {
   const acceptedTypes = ["image/png", "image/jpeg", "image/webp"];
   if (!acceptedTypes.includes(file.type)) {

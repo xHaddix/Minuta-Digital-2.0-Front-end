@@ -1560,6 +1560,134 @@
   box-shadow: inset 0 0 0 1px rgba(158, 178, 255, 0.06);
 }
 
+.layout-shell .user-pill-button {
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.layout-shell .user-pill-button:hover {
+  border-color: rgba(125, 153, 226, 0.62);
+  background: rgba(38, 59, 89, 0.96);
+}
+
+.layout-shell .user-pill-button:focus-visible {
+  outline: 2px solid #8daaff;
+  outline-offset: 2px;
+}
+
+.user-pill-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  color: #cbd8ff;
+  border: 1px solid rgba(141, 170, 255, 0.3);
+  border-radius: 50%;
+  background: rgba(73, 97, 151, 0.28);
+}
+
+.profile-modal-backdrop {
+  z-index: 1200;
+}
+
+.profile-modal {
+  width: min(100%, 590px);
+  max-height: min(90vh, 820px);
+  overflow-y: auto;
+  gap: 1rem;
+}
+
+.profile-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #334155;
+}
+
+.profile-modal-header h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.profile-modal-eyebrow {
+  margin: 0 0 0.25rem;
+  color: #93a8cc;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.profile-close-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  color: #cbd5e1;
+  border: 1px solid #3b4a61;
+  border-radius: 9px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.profile-close-button:hover:not(:disabled) {
+  color: #fff;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.profile-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.25rem;
+}
+
+.profile-summary-grid > div {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(125, 153, 226, 0.2);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.38);
+}
+
+.profile-summary-grid span,
+.profile-field-hint {
+  color: #94a3b8;
+  font-size: 0.76rem;
+}
+
+.profile-summary-grid strong {
+  overflow-wrap: anywhere;
+  color: #e2e8f0;
+  font-size: 0.84rem;
+}
+
+.profile-modal .form-group input:disabled {
+  color: #a8b3c5;
+  opacity: 0.8;
+}
+
+@media (max-width: 620px) {
+  .layout-shell .user-pill {
+    min-width: 0;
+  }
+
+  .profile-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .layout-shell .avatar {
   width: 38px;
   height: 38px;
