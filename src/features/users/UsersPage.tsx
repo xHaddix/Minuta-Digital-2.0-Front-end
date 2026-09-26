@@ -8,6 +8,7 @@ import type { User } from "../../types/user";
 import { CheckIcon } from "../../components/icons/CheckIcon";
 import { EditIcon } from "../../components/icons/EditIcon";
 import { TrashIcon } from "../../components/icons/TrashIcon";
+import { AvatarImage } from "../../components/ui/AvatarImage";
 
 export const UsersPage: React.FC = () => {
   const { session } = useAuth();
@@ -314,7 +315,10 @@ export const UsersPage: React.FC = () => {
                     >
                       {/* USUARIO / CORREO con indicador (Tú) */}
                       <td style={{ padding: "0.75rem 1rem" }}>
-                        <div
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <AvatarImage src={u.imgProfile} name={u.name} size={38} />
+                          <div>
+                            <div
                           style={{
                             fontWeight: 700,
                             color: "#fff",
@@ -333,8 +337,8 @@ export const UsersPage: React.FC = () => {
                               (Tú)
                             </span>
                           )}
-                        </div>
-                        <div
+                            </div>
+                            <div
                           style={{
                             color: "#94a3b8",
                             fontSize: "0.85rem",
@@ -342,6 +346,8 @@ export const UsersPage: React.FC = () => {
                           }}
                         >
                           {u.email}
+                            </div>
+                          </div>
                         </div>
                       </td>
 
@@ -463,6 +469,7 @@ export const UsersPage: React.FC = () => {
       <InviteUserModal
         isOpen={isInviteOpen}
         currentUserRoleCode={currentUserRoleCode}
+        currentResidentialComplexId={session?.residentialComplexId}
         onClose={() => setIsInviteOpen(false)}
         onSuccess={() => void loadUsers()}
       />

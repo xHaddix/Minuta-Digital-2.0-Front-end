@@ -53,6 +53,9 @@ export interface Organization {
   slug?: string;
   urlLogo?: string | null;
   logoUrl?: string | null; // Sostener por retrocompatibilidad UI
+  identification?: string | null;
+  contactEmail?: string;
+  contactPhone?: string | null;
   status?: number | string;
   createdAt?: string;
   updatedAt?: string;
@@ -63,6 +66,7 @@ export interface BaseUser {
   id: string;
   email: string;
   name: string;
+  imgProfile?: string | null;
   roleCode: RoleCode;
   organizationId?: string | null;
   residentialComplexId?: string | null;

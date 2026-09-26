@@ -9,6 +9,8 @@ import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { VisitorsPage } from "../features/visitors/VisitorsPage";
 import { UsersPage } from "../features/users/UsersPage";
 import { ApartmentsPage } from "../features/apartments/ApartmentsPage";
+import { OrganizationsPage } from "../features/dashboard/OrganizationsPage";
+import { ComplexesPage } from "../features/dashboard/ComplexesPage";
 import { MainLayout } from "../layout/MainLayout";
 
 export function AppRouter() {
@@ -81,6 +83,9 @@ export function AppRouter() {
             </Can>
           }
         />
+
+        <Route path="organizations" element={<Can perform="organizations:manage" fallback={<div className="dashboard-alert">No tiene permisos para administrar organizaciones.</div>}><OrganizationsPage /></Can>} />
+        <Route path="residential-complexes" element={<Can perform="complexes:manage" fallback={<div className="dashboard-alert">No tiene permisos para administrar conjuntos.</div>}><ComplexesPage /></Can>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

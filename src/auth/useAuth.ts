@@ -225,6 +225,18 @@ export const useAuth = () => {
     window.location.assign("/login");
   }, []);
 
+  const setProfileImage = useCallback((imgProfile: string | null) => {
+    const auth = getStoredAuth();
+    if (!auth?.user) return;
+
+    const nextAuth = {
+      ...auth,
+      user: { ...auth.user, imgProfile },
+    };
+    setStoredAuthWithPreference(nextAuth, isAuthRemembered());
+    setSession(nextAuth);
+  }, []);
+
   const can = useCallback(
     (permission: PermissionCode) => {
       const auth = session ?? getStoredAuth();
@@ -263,6 +275,7 @@ export const useAuth = () => {
     session,
     login,
     switchComplex,
+    setProfileImage,
     logout,
     can,
     canAny,

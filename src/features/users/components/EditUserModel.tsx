@@ -6,6 +6,9 @@ import {
 } from "../../../services/user-service";
 import { CustomSelect, type SelectOption } from "../../../components/ui/Select";
 import { CheckIcon } from "../../../components/icons/CheckIcon";
+import { ImageUploadField } from "../../../components/ui/ImageUploadField";
+import { uploadUserAvatar } from "../../../services/storage-service";
+import { buildUpdateUserPayload } from "./edit-user-payload";
 import type {
   DocumentType,
   Role,
@@ -42,6 +45,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!isOpen || !user) {
@@ -59,6 +63,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
       documentNumber: user.documentNumber || "",
       status: user.status,
     });
+    setAvatarFile(null);
 
     const loadCatalogs = async () => {
       setLoading(true);
@@ -92,17 +97,26 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
     setSubmitting(true);
     setError(null);
 
+    let profileUpdated = false;
     try {
-      const payload: UpdateUserPayload = {
-        name: formData.name?.trim(),
-        phone: formData.phone?.trim() || undefined,
-        roleId: formData.roleId || undefined,
-        documentTypeId: formData.documentTypeId || undefined,
-        documentNumber: formData.documentNumber?.trim() || undefined,
-        status: Number(formData.status),
-      };
+      const payload: UpdateUserPayload = buildUpdateUserPayload(formData);
 
       await updateUser(user.id, payload);
+      profileUpdated = true;
+      if (avatarFile) {
+        if (!user.residentialComplexId) {
+          setError("Los datos se guardaron, pero este usuario no tiene un conjunto asociado para actualizar su foto.");
+          return;
+        }
+        try {
+          await uploadUserAvatar(user.id, avatarFile);
+        } catch (uploadError) {
+          setError(uploadError instanceof Error
+            ? `Los datos se guardaron, pero no se pudo cargar la foto: ${uploadError.message}`
+            : "Los datos se guardaron, pero no se pudo cargar la foto.");
+          return;
+        }
+      }
 
       setSuccessMessage("¡Usuario actualizado correctamente!");
 
@@ -116,7 +130,9 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
           ? (err as { response?: { data?: { message?: string } } }).response
               ?.data?.message
           : undefined;
-      setError(message || "Ocurrió un error al actualizar el usuario.");
+      setError(profileUpdated
+        ? "Los datos se guardaron, pero ocurrió un error al actualizar la foto."
+        : message || "Ocurrió un error al actualizar el usuario.");
     } finally {
       setSubmitting(false);
     }
@@ -244,6 +260,12 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                 disabled={submitting || Boolean(successMessage)}
               />
             </div>
+
+            {user.residentialComplexId ? (
+              <ImageUploadField name={formData.name || user.name} initialUrl={user.imgProfile} onChange={setAvatarFile} disabled={submitting || Boolean(successMessage)} />
+            ) : (
+              <p className="image-upload-note">La foto se puede actualizar cuando el usuario esté asociado a un conjunto residencial.</p>
+            )}
 
             <div
               className="modal-actions"

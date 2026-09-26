@@ -32,6 +32,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  imgProfile?: string | null;
   phone?: string | null;
   status: number;
   organizationId?: string | null;
@@ -53,6 +54,7 @@ export interface User {
 export interface InviteUserPayload {
   email: string;
   name: string;
+  imgProfile?: string;
   phone?: string;
   roleId: string;
   organizationId?: string;
@@ -73,6 +75,7 @@ export interface InviteUserResponse {
 
 export interface UpdateUserPayload {
   name?: string;
+  imgProfile?: string;
   phone?: string;
   roleId?: string;
   documentTypeId?: string;

@@ -414,6 +414,47 @@ a {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
+.context-entity-card-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.context-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.context-logo-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #334155;
+  border-radius: 0.55rem;
+  background: #172033;
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.context-logo-upload:hover {
+  border-color: #818cf8;
+  background: #202b45;
+}
+
+.context-logo-upload[aria-disabled="true"] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.context-logo-upload--card {
+  width: 100%;
+}
+
 .context-entity-card:hover {
   transform: translateY(-4px);
   border-color: #6366f1;

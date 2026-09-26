@@ -36,6 +36,7 @@ const isUserSession = (value: unknown): value is UserSession => {
     typeof value.id === "string" &&
     typeof value.email === "string" &&
     typeof value.name === "string" &&
+    (value.imgProfile === undefined || isNullableString(value.imgProfile)) &&
     isRoleCode(value.roleCode) &&
     isNullableString(value.organizationId) &&
     isNullableString(value.residentialComplexId)

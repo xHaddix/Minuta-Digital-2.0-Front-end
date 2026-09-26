@@ -7,6 +7,8 @@ import {
 } from "../../../services/user-service";
 import { CustomSelect, type SelectOption } from "../../../components/ui/Select";
 import { CheckIcon } from "../../../components/icons/CheckIcon";
+import { ImageUploadField } from "../../../components/ui/ImageUploadField";
+import { uploadUserAvatar } from "../../../services/storage-service";
 import type {
   DocumentType,
   InviteUserPayload,
@@ -19,6 +21,7 @@ interface InviteUserModalProps {
   onClose: () => void;
   onSuccess: (invitedEmail: string) => void;
   currentUserRoleCode: string;
+  currentResidentialComplexId?: string | null;
 }
 
 export const InviteUserModal: React.FC<InviteUserModalProps> = ({
@@ -26,6 +29,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
   onClose,
   onSuccess,
   currentUserRoleCode,
+  currentResidentialComplexId,
 }) => {
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -46,6 +50,8 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [uploadWarning, setUploadWarning] = useState<string | null>(null);
 
   const isGlobalRole =
     currentUserRoleCode === "ROLE_DEV" ||
@@ -55,6 +61,8 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
     if (!isOpen) {
       setSuccessMessage(null);
       setError(null);
+      setAvatarFile(null);
+      setUploadWarning(null);
       return;
     }
 
@@ -112,15 +120,25 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
         ...(formData.documentNumber?.trim() && {
           documentNumber: formData.documentNumber.trim(),
         }),
-        ...(formData.residentialComplexId && {
-          residentialComplexId: formData.residentialComplexId,
+        ...((formData.residentialComplexId || currentResidentialComplexId) && {
+          residentialComplexId: formData.residentialComplexId || currentResidentialComplexId || undefined,
         }),
         ...(formData.organizationId && {
           organizationId: formData.organizationId,
         }),
       };
 
-      await inviteUser(payload);
+      const invitation = await inviteUser(payload);
+      const assignedRole = roles.find((role) => role.id === formData.roleId);
+      const targetComplexId = formData.residentialComplexId || currentResidentialComplexId;
+      if (avatarFile && invitation.user?.id && targetComplexId &&
+          ["ROLE_COMPLEX_ADMIN", "ROLE_SECURITY", "ROLE_RESIDENT"].includes(assignedRole?.code ?? "")) {
+        try {
+          await uploadUserAvatar(invitation.user.id, avatarFile);
+        } catch {
+          setUploadWarning("La invitación se creó, pero no se pudo cargar la foto. Puedes intentarlo desde Editar usuario.");
+        }
+      }
 
       const invitedEmail = formData.email.trim();
       setSuccessMessage(`¡Invitación enviada con éxito a ${invitedEmail}!`);
@@ -177,6 +195,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
             <CheckIcon /> {successMessage}
           </div>
         )}
+        {uploadWarning && <div className="dashboard-alert">{uploadWarning}</div>}
 
         {loading ? (
           <div className="spinner-container">
@@ -235,6 +254,12 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
                 placeholder="Seleccione un rol"
               />
             </div>
+
+            {(["ROLE_COMPLEX_ADMIN", "ROLE_SECURITY", "ROLE_RESIDENT"].includes(
+              roles.find((role) => role.id === formData.roleId)?.code ?? "",
+            ) && (formData.residentialComplexId || currentResidentialComplexId)) && (
+              <ImageUploadField name={formData.name || "usuario"} onChange={setAvatarFile} disabled={submitting || Boolean(successMessage)} />
+            )}
 
             {isGlobalRole && (
               <div className="form-group">

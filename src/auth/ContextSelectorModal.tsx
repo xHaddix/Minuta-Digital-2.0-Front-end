@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowDownAZ,
@@ -9,10 +9,16 @@ import {
   X,
   Search,
   ShieldCheck,
+  ImagePlus,
 } from "lucide-react";
 import type { Organization } from "../types/auth";
 import type { ResidentialComplex } from "../types/user";
 import { useAuth } from "./useAuth";
+import {
+  uploadComplexLogo,
+  uploadOrganizationLogo,
+  validateImageFile,
+} from "../services/storage-service";
 import {
   fetchOrganizations,
   fetchResidentialComplexes,
@@ -45,6 +51,7 @@ export function ContextSelectorModal({ onClose }: ContextSelectorModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [error, setError] = useState("");
+  const [uploadingLogoId, setUploadingLogoId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadOrganizations = async () => {
@@ -119,6 +126,65 @@ export function ContextSelectorModal({ onClose }: ContextSelectorModalProps) {
     setCurrentStep("ORGANIZATION");
   };
 
+  const handleOrganizationLogoUpload = async (
+    event: ChangeEvent<HTMLInputElement>,
+    organizationId: string,
+  ) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+
+    try {
+      validateImageFile(file);
+      setUploadingLogoId(organizationId);
+      setError("");
+      const updated = await uploadOrganizationLogo(organizationId, file);
+      setOrganizations((items) =>
+        items.map((item) =>
+          item.id === organizationId ? { ...item, urlLogo: updated.urlLogo } : item,
+        ),
+      );
+      setSelectedOrganization((item) =>
+        item?.id === organizationId ? { ...item, urlLogo: updated.urlLogo } : item,
+      );
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "No se pudo cargar el logo.");
+    } finally {
+      setUploadingLogoId(null);
+    }
+  };
+
+  const handleComplexLogoUpload = async (
+    event: ChangeEvent<HTMLInputElement>,
+    complexId: string,
+  ) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+
+    try {
+      validateImageFile(file);
+      setUploadingLogoId(complexId);
+      setError("");
+      const updated = await uploadComplexLogo(complexId, file);
+      setComplexes((items) =>
+        items.map((item) =>
+          item.id === complexId ? { ...item, urlLogo: updated.urlLogo } : item,
+        ),
+      );
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "No se pudo cargar el logo.");
+    } finally {
+      setUploadingLogoId(null);
+    }
+  };
+
+  const organizationLogoTarget =
+    selectedOrganization?.id ??
+    (isOrgAdmin ? session?.user?.organizationId ?? undefined : undefined);
+
   // Mapeo corregido soportando 'urlLogo' (servidor) y 'logoUrl' (fallback)
   const activeItems = useMemo(() => {
     const rawList =
@@ -179,8 +245,23 @@ export function ContextSelectorModal({ onClose }: ContextSelectorModalProps) {
               )}
             </div>
           </div>
-          {onClose ? (
-            <button
+          <div className="context-modal-header-actions">
+            {organizationLogoTarget && (isDev || isOrgAdmin) ? (
+              <label className="context-logo-upload" aria-disabled={!!uploadingLogoId}>
+                <ImagePlus size={15} />
+                <span>{uploadingLogoId === organizationLogoTarget ? "Subiendo..." : "Logo organización"}</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  aria-label="Subir logo de organización"
+                  disabled={!!uploadingLogoId}
+                  onChange={(event) => void handleOrganizationLogoUpload(event, organizationLogoTarget)}
+                  hidden
+                />
+              </label>
+            ) : null}
+            {onClose ? (
+              <button
               type="button"
               className="context-close-button"
               onClick={onClose}
@@ -189,8 +270,9 @@ export function ContextSelectorModal({ onClose }: ContextSelectorModalProps) {
               title="Cerrar"
             >
               <X size={20} />
-            </button>
-          ) : null}
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className="context-controls-bar">
@@ -258,36 +340,44 @@ export function ContextSelectorModal({ onClose }: ContextSelectorModalProps) {
             </div>
           ) : (
             activeItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="context-entity-card"
-                onClick={() =>
-                  currentStep === "ORGANIZATION"
-                    ? handleSelectOrganization({
-                        id: item.id,
-                        name: item.name,
-                      })
-                    : handleSelectComplex(item.id, item.name)
-                }
-              >
-                <div className="entity-card-media">
-                  {item.logo ? (
-                    <img src={item.logo} alt={item.name} />
-                  ) : (
-                    <div className="entity-card-placeholder">
-                      {currentStep === "ORGANIZATION" ? (
-                        <Building size={32} />
-                      ) : (
-                        <Building2 size={32} />
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="entity-card-footer">
-                  <span className="entity-card-title">{item.name}</span>
-                </div>
-              </button>
+              <div className="context-entity-card-shell" key={item.id}>
+                <button
+                  type="button"
+                  className="context-entity-card"
+                  onClick={() =>
+                    currentStep === "ORGANIZATION"
+                      ? handleSelectOrganization({ id: item.id, name: item.name })
+                      : handleSelectComplex(item.id, item.name)
+                  }
+                >
+                  <div className="entity-card-media">
+                    {item.logo ? (
+                      <img src={item.logo} alt={item.name} />
+                    ) : (
+                      <div className="entity-card-placeholder">
+                        {currentStep === "ORGANIZATION" ? <Building size={32} /> : <Building2 size={32} />}
+                      </div>
+                    )}
+                  </div>
+                  <div className="entity-card-footer">
+                    <span className="entity-card-title">{item.name}</span>
+                  </div>
+                </button>
+                {currentStep === "COMPLEX" && (isDev || isOrgAdmin) ? (
+                  <label className="context-logo-upload context-logo-upload--card" aria-disabled={!!uploadingLogoId}>
+                    <ImagePlus size={14} />
+                    <span>{uploadingLogoId === item.id ? "Subiendo logo..." : "Cambiar logo"}</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      aria-label={`Subir logo para ${item.name}`}
+                      disabled={!!uploadingLogoId}
+                      onChange={(event) => void handleComplexLogoUpload(event, item.id)}
+                      hidden
+                    />
+                  </label>
+                ) : null}
+              </div>
             ))
           )}
         </div>
