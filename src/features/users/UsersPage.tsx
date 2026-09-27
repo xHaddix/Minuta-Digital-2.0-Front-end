@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchUsers, deleteUser } from "../../services/user-service";
 import { InviteUserModal } from "./components/InviteUserModal";
 import { EditUserModal } from "./components/EditUserModel";
@@ -15,6 +15,7 @@ export const UsersPage: React.FC = () => {
   const currentUser = session?.user;
   const currentUserRoleCode =
     session?.roleCode || session?.user?.roleCode || "";
+  const activeComplexId = session?.residentialComplexId ?? null;
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -34,7 +35,7 @@ export const UsersPage: React.FC = () => {
   const [deleting, setDeleting] = useState<boolean>(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -50,11 +51,27 @@ export const UsersPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadUsers();
-  }, []);
+  }, [activeComplexId, loadUsers]);
+
+  useEffect(() => {
+    setSelectedRoleFilter("ALL");
+    setSelectedUserForEdit(null);
+    setUserToDelete(null);
+  }, [activeComplexId]);
+
+  // ROLE_DEV and organization admins may receive users from a broader backend
+  // scope. Keep the visible list aligned with the currently selected complex.
+  const contextUsers = useMemo(
+    () =>
+      activeComplexId
+        ? users.filter((user) => user.residentialComplexId === activeComplexId)
+        : users,
+    [activeComplexId, users],
+  );
 
   const handleDeleteConfirm = async () => {
     if (!userToDelete) return;
@@ -84,7 +101,7 @@ export const UsersPage: React.FC = () => {
   // Opciones del selector de roles
   const roleOptions: SelectOption[] = useMemo(() => {
     const rolesMap = new Map<string, string>();
-    users.forEach((u) => {
+    contextUsers.forEach((u) => {
       if (u.role?.id && u.role?.name) {
         rolesMap.set(u.role.id, u.role.name);
       }
@@ -98,13 +115,13 @@ export const UsersPage: React.FC = () => {
     });
 
     return options;
-  }, [users]);
+  }, [contextUsers]);
 
   // Lista filtrada por rol
   const filteredUsers = useMemo(() => {
-    if (selectedRoleFilter === "ALL") return users;
-    return users.filter((u) => u.role?.id === selectedRoleFilter);
-  }, [users, selectedRoleFilter]);
+    if (selectedRoleFilter === "ALL") return contextUsers;
+    return contextUsers.filter((u) => u.role?.id === selectedRoleFilter);
+  }, [contextUsers, selectedRoleFilter]);
 
   const renderStatusBadge = (status: number) => {
     switch (status) {

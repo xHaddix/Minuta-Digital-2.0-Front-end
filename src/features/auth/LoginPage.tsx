@@ -2,7 +2,7 @@ import axios from "axios";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Building2, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
 import { AnimatedButton } from "../../components/ui/AnimatedButton";
 import { FormFeedback } from "../../components/ui/FormFeedback";
@@ -16,6 +16,7 @@ const features = [
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,7 +46,19 @@ export function LoginPage() {
 
     try {
       await login(trimmedEmail, trimmedPassword, rememberMe);
-      navigate("/dashboard");
+      const fromState = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)?.from;
+      const savedPath = window.sessionStorage.getItem("minuta:redirect-after-login");
+      const statePath = fromState?.pathname
+        ? `${fromState.pathname}${fromState.search ?? ""}${fromState.hash ?? ""}`
+        : null;
+      const nextPath = statePath ?? savedPath;
+      window.sessionStorage.removeItem("minuta:redirect-after-login");
+      navigate(
+        nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+          ? nextPath
+          : "/dashboard",
+        { replace: true },
+      );
     } catch (caughtError) {
       const responseMessage = axios.isAxiosError(caughtError)
         ? caughtError.response?.data?.message

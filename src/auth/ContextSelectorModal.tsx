@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowDownAZ,
   ArrowUpAZ,
@@ -33,6 +33,7 @@ interface ContextSelectorModalProps {
 
 export function ContextSelectorModal({ onClose }: ContextSelectorModalProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { session, switchComplex: performSwitchComplex } = useAuth();
   const roleCode = session?.user?.roleCode ?? null;
   const isDev = roleCode === "ROLE_DEV";
@@ -112,7 +113,8 @@ export function ContextSelectorModal({ onClose }: ContextSelectorModalProps) {
         residentialComplexName: complexName,
       });
       onClose?.();
-      navigate("/dashboard", { replace: true });
+      const currentPath = `${location.pathname}${location.search}${location.hash}`;
+      navigate(location.pathname === "/" ? "/dashboard" : currentPath, { replace: true });
     } catch {
       setError("No fue posible conmutar al conjunto seleccionado.");
       setIsSwitching(false);

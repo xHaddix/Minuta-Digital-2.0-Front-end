@@ -49,17 +49,13 @@ api.interceptors.response.use(
       requestUrl.includes("/auth/reset-password");
 
     if (status === 401 && !isPublicAuthFlow) {
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (window.location.pathname !== "/login") {
+        window.sessionStorage.setItem("minuta:redirect-after-login", currentPath);
+      }
       setApiAccessToken(null);
       clearStoredAuth();
       window.location.assign("/login");
-    }
-
-    if (
-      status === 403 &&
-      !isPublicAuthFlow &&
-      window.location.pathname !== "/dashboard"
-    ) {
-      window.location.assign("/dashboard");
     }
 
     return Promise.reject(error);
