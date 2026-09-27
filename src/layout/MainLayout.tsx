@@ -5,8 +5,10 @@ import {
   // FileText,
   LayoutDashboard,
   LogOut,
+  Menu,
   UserRound,
   UsersRound,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
@@ -77,6 +79,7 @@ export function MainLayout() {
   const { session, logout, setProfileName } = useAuth();
   const [isContextSelectorOpen, setIsContextSelectorOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [contextNames, setContextNames] = useState({
     organizationName: session?.organizationName ?? null,
@@ -88,6 +91,14 @@ export function MainLayout() {
     roleCode === "ROLE_DEV" ||
     roleCode === "ROLE_ORG_ADMIN" ||
     roleCode === "ROLE_COMPLEX_ADMIN";
+
+  useEffect(() => {
+    const closeMenuOnDesktop = () => {
+      if (window.innerWidth > 900) setIsMenuOpen(false);
+    };
+    window.addEventListener("resize", closeMenuOnDesktop);
+    return () => window.removeEventListener("resize", closeMenuOnDesktop);
+  }, []);
 
   useEffect(() => {
     let isCancelled = false;
@@ -188,7 +199,18 @@ export function MainLayout() {
         </div>
       ) : null}
 
-      <aside id="app-sidebar" className="sidebar">
+      {isMenuOpen && (
+        <button
+          type="button"
+          className="mobile-menu-overlay is-visible"
+          aria-label="Cerrar menú de navegación"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
+      <aside
+        id="app-sidebar"
+        className={`sidebar${isMenuOpen ? " is-open" : ""}`}
+      >
         <div className="sidebar-brand">
           <div className="brand-group">
             <div className="brand-mark">
@@ -211,6 +233,7 @@ export function MainLayout() {
               <NavLink
                 to={item.to}
                 end
+                onClick={() => setIsMenuOpen(false)}
                 className={({ isActive }) =>
                   `nav-item ${isActive ? "active" : ""}`
                 }
@@ -227,8 +250,7 @@ export function MainLayout() {
           <button
             type="button"
             className="inline-button session-action-button"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
+            onClick={() => setIsMenuOpen(false)}
           >
             Cerrar menú
           </button>
@@ -238,6 +260,16 @@ export function MainLayout() {
       <main className="workspace">
         <header className="topbar">
           <div className="topbar-group">
+            <button
+              type="button"
+              className={`mobile-menu-button${isMenuOpen ? " is-open" : ""}`}
+              aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={isMenuOpen}
+              aria-controls="app-sidebar"
+              onClick={() => setIsMenuOpen((open) => !open)}
+            >
+              {isMenuOpen ? <X size={19} /> : <Menu size={19} />}
+            </button>
             <button
               type="button"
               className="user-pill user-pill-button"

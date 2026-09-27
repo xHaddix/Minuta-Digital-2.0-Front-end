@@ -1578,6 +1578,18 @@
   outline-offset: 2px;
 }
 
+.layout-shell .user-pill-button > div {
+  min-width: 0;
+}
+
+.layout-shell .user-pill-button strong {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .user-pill-icon {
   width: 38px;
   height: 38px;
@@ -2550,5 +2562,237 @@
 
   .layout-shell .sidebar-brand .brand-name {
     font-size: 1.5rem;
+  }
+}
+
+/* Responsive layout refinements shared by the authenticated views. */
+.mobile-menu-button {
+  display: none;
+}
+
+.layout-shell .sidebar-footer {
+  display: none;
+}
+
+.users-page .table-wrap,
+.apartments-page .table-wrap,
+.visitors-page .table-wrap {
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.custom-select-trigger > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 1800px) {
+  .layout-shell .workspace {
+    max-width: 2040px;
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 1200px) {
+  .layout-shell .nav-list {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .layout-shell .sidebar-footer {
+    display: none;
+  }
+
+  .entity-admin-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .mobile-menu-button {
+    display: inline-flex;
+  }
+
+  .layout-shell .sidebar {
+    height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .layout-shell .sidebar-footer {
+    display: flex;
+  }
+
+  .layout-shell .nav-list {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    border: 0;
+    background: rgba(1, 7, 16, 0.58);
+    backdrop-filter: blur(2px);
+  }
+
+  .layout-shell .topbar,
+  .layout-shell .topbar-group {
+    min-width: 0;
+  }
+
+  .layout-shell .user-pill {
+    min-width: 0;
+  }
+
+  .layout-shell .context-switcher {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .layout-shell .workspace {
+    padding: 12px 10px 20px;
+  }
+
+  .layout-shell .topbar {
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .layout-shell .topbar-group {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .layout-shell .topbar-group:last-child {
+    flex-wrap: wrap;
+  }
+
+  .layout-shell .user-pill-button {
+    flex: 1;
+    padding: 7px 9px;
+  }
+
+  .layout-shell .session-action-button {
+    min-height: 40px;
+    padding: 8px 10px;
+  }
+
+  .layout-shell .context-switcher {
+    flex: 1 1 180px;
+    max-width: none;
+    padding: 8px 10px;
+  }
+
+  .layout-shell .context-switcher .context-switcher-copy {
+    min-width: 0;
+  }
+
+  .layout-shell .context-switcher-copy small,
+  .layout-shell .context-switcher-copy strong {
+    max-width: 100%;
+  }
+
+  .layout-shell .content-area {
+    margin-top: 14px;
+  }
+
+  .dashboard-view {
+    gap: 16px;
+  }
+
+  .dashboard-view .section-header {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 14px 12px 8px;
+  }
+
+  .dashboard-view .section-header > div {
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .dashboard-view .section-header .custom-select-container,
+  .custom-select-container {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .entity-admin-page {
+    gap: 0.85rem;
+  }
+
+  .entity-form-card,
+  .entity-list-card {
+    padding: 0.9rem;
+  }
+
+  .apartments-filter-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .apartments-filter-row .custom-select-container {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .modal-backdrop {
+    align-items: flex-start;
+    padding: 0.65rem;
+    overflow-y: auto;
+  }
+
+  .modal-content,
+  .context-modal-card,
+  .profile-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - 1.3rem);
+    margin-block: auto;
+    padding: 1rem;
+  }
+
+  .context-modal-card {
+    overflow-y: auto;
+    border-radius: 16px;
+  }
+
+  .image-upload-field {
+    align-items: flex-start;
+    padding: 0.75rem;
+  }
+
+  .data-table {
+    min-width: 680px;
+  }
+}
+
+@media (max-width: 380px) {
+  .layout-shell .workspace {
+    padding-inline: 8px;
+  }
+
+  .layout-shell .user-pill-icon {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
+  .layout-shell .user-pill-button {
+    gap: 8px;
+  }
+
+  .layout-shell .context-switcher-copy {
+    display: none !important;
+  }
+
+  .entity-admin-heading h1 {
+    font-size: 1.3rem;
+    overflow-wrap: anywhere;
   }
 }

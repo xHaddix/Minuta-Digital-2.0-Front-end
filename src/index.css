@@ -30,6 +30,19 @@ body {
     radial-gradient(circle at top, rgba(38, 79, 143, 0.45), transparent 30%),
     linear-gradient(180deg, #020d1f 0%, #071a2d 45%, #020c1a 100%);
   color: #edf6ff;
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
 }
 
 button,
