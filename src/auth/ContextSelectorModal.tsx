@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   X,
   Search,
-  ShieldCheck,
   ImagePlus,
 } from "lucide-react";
 import type { Organization } from "../types/auth";
@@ -332,8 +331,8 @@ export function ContextSelectorModal({ onClose }: ContextSelectorModalProps) {
               <div className="auth-transition-spinner" />
               <span>
                 {isSwitching
-                  ? "Conmutando de conjunto y re-firmando token..."
-                  : "Cargando catálogo..."}
+                  ? "Cambiando de conjunto..."
+                  : "Cargando opciones..."}
               </span>
             </div>
           ) : activeItems.length === 0 ? (
@@ -382,14 +381,6 @@ export function ContextSelectorModal({ onClose }: ContextSelectorModalProps) {
               </div>
             ))
           )}
-        </div>
-
-        <div className="context-modal-footer">
-          <ShieldCheck size={16} />
-          <span>
-            Tu token JWT se refrendará al seleccionar una sede para aplicar el
-            aislamiento de datos.
-          </span>
         </div>
       </div>
     </div>

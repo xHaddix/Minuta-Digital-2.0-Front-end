@@ -333,10 +333,12 @@ export const UsersPage: React.FC = () => {
                     >
                       {/* USUARIO / CORREO con indicador (Tú) */}
                       <td style={{ padding: "0.75rem 1rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <div className="users-row-identity" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                           <AvatarImage src={u.imgProfile} name={u.name} size={38} />
-                          <div>
+                          <div className="users-row-copy">
                             <div
+                              className="users-row-name"
+                              title={u.name}
                           style={{
                             fontWeight: 700,
                             color: "#fff",
@@ -357,6 +359,8 @@ export const UsersPage: React.FC = () => {
                           )}
                             </div>
                             <div
+                              className="users-row-email"
+                              title={u.email}
                           style={{
                             color: "#94a3b8",
                             fontSize: "0.85rem",

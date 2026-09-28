@@ -9,7 +9,7 @@ import { uploadComplexLogo } from "../../services/storage-service";
 import type { Organization } from "../../types/auth";
 import type { ResidentialComplex } from "../../types/user";
 import { getApiErrorMessage } from "../../utils/api-error-message.mjs";
-const slugify = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+import { slugifyComplexName } from "./complex-slug.mjs";
 
 export function ComplexesPage() {
   const { session } = useAuth();
@@ -23,7 +23,7 @@ export function ComplexesPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
-  const [form, setForm] = useState({ name: "", slug: "", organizationId, contactEmail: "", contactPhone: "", planCode: "BASIC" });
+  const [form, setForm] = useState({ name: "", organizationId, contactEmail: "", contactPhone: "", planCode: "BASIC" });
   const organizationOptions: SelectOption[] = [
     { value: "", label: "Seleccionar organización" },
     ...organizations.map((organization) => ({ value: organization.id, label: organization.name })),
@@ -50,10 +50,10 @@ export function ComplexesPage() {
     const targetOrganizationId = isDev ? form.organizationId : undefined;
     if (isDev && !targetOrganizationId) { setError("Selecciona la organización a la que pertenece el conjunto."); setSaving(false); return; }
     try {
-      const created = await createResidentialComplex({ name: form.name.trim(), slug: slugify(form.slug), contactEmail: form.contactEmail.trim(), ...(form.contactPhone.trim() && { contactPhone: form.contactPhone.trim() }), ...(targetOrganizationId && { organizationId: targetOrganizationId }), planCode: form.planCode });
+      const created = await createResidentialComplex({ name: form.name.trim(), slug: slugifyComplexName(form.name), contactEmail: form.contactEmail.trim(), ...(form.contactPhone.trim() && { contactPhone: form.contactPhone.trim() }), ...(targetOrganizationId && { organizationId: targetOrganizationId }), planCode: form.planCode });
       let logoFailed = false;
       if (logo) { try { const uploaded = await uploadComplexLogo(created.id, logo); created.urlLogo = uploaded.urlLogo; } catch { logoFailed = true; } }
-      setItems((current) => [created, ...current]); setForm({ name: "", slug: "", organizationId: isDev ? form.organizationId : organizationId, contactEmail: "", contactPhone: "", planCode: "BASIC" }); setLogo(null);
+      setItems((current) => [created, ...current]); setForm({ name: "", organizationId: isDev ? form.organizationId : organizationId, contactEmail: "", contactPhone: "", planCode: "BASIC" }); setLogo(null);
       setNotice(logoFailed ? "Conjunto creado; el logo no se pudo cargar. Puedes volver a intentarlo desde el selector de contexto." : "Conjunto residencial creado correctamente.");
     } catch (err) { setError(getApiErrorMessage(err, "No se pudo crear el conjunto residencial.")); }
     finally { setSaving(false); }
@@ -65,15 +65,14 @@ export function ComplexesPage() {
       <form className="entity-form-card" onSubmit={(event) => void submit(event)}>
         <div className="entity-card-heading"><span className="entity-icon"><Building2 size={18}/></span><div><h2>Nuevo conjunto</h2><p>Los campos con * son obligatorios.</p></div></div>
         {isDev ? <div className="entity-field"><label>Organización *</label><CustomSelect options={organizationOptions} value={form.organizationId} onChange={(value) => setForm({ ...form, organizationId: value })} placeholder="Seleccionar organización" disabled={saving}/></div> : <div className="entity-scope-note"><strong>Organización</strong><span>{session?.organizationName || "Se asignará a tu organización"}</span></div>}
-        <label>Nombre del conjunto *<input required minLength={2} maxLength={150} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: form.slug ? slugify(e.target.value) : slugify(e.target.value) })} placeholder="Ej. Mirador de los Pinos" disabled={saving}/></label>
-        <label>Slug *<input required pattern="[a-z0-9-]+" value={form.slug} onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })} placeholder="mirador-de-los-pinos" disabled={saving}/><small className="entity-help">Se genera desde el nombre y debe ser único.</small></label>
+        <label>Nombre del conjunto *<input required minLength={2} maxLength={150} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej. Mirador de los Pinos" disabled={saving}/></label>
         <label>Correo de contacto *<input type="email" required value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} placeholder="administracion@conjunto.com" disabled={saving}/></label>
         <label>Teléfono<input type="tel" value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} placeholder="+57 300 123 4567" disabled={saving}/></label>
         {isDev && <div className="entity-field"><label>Plan</label><CustomSelect options={planOptions} value={form.planCode} onChange={(value) => setForm({ ...form, planCode: value })} disabled={saving}/></div>}
         <LogoFilePicker file={logo} onChange={setLogo} disabled={saving}/><button className="inline-button entity-submit" type="submit" disabled={saving}>{saving ? "Creando..." : "Crear conjunto"}</button>
       </form>
       <div className="entity-list-card"><div className="entity-card-heading"><span className="entity-icon"><Building2 size={18}/></span><div><h2>Conjuntos registrados</h2><p>{items.length} en total</p></div></div>
-        {loading ? <p className="entity-list-empty">Cargando conjuntos...</p> : items.length === 0 ? <p className="entity-list-empty">No hay conjuntos disponibles para esta organización.</p> : <div className="entity-list">{items.map((item) => <article className="entity-list-row" key={item.id}><AvatarImage src={item.urlLogo ?? item.logoUrl} name={item.name} size={48}/><div className="entity-list-info"><strong>{item.name}</strong><span>{item.contactEmail || "Sin correo"}</span><small>{item.slug}</small></div><span className={`entity-status ${Number(item.status ?? 1) === 1 ? "is-active" : ""}`}>{Number(item.status ?? 1) === 1 ? "Activo" : "Inactivo"}</span></article>)}</div>}
+        {loading ? <p className="entity-list-empty">Cargando conjuntos...</p> : items.length === 0 ? <p className="entity-list-empty">No hay conjuntos disponibles para esta organización.</p> : <div className="entity-list">{items.map((item) => <article className="entity-list-row" key={item.id}><AvatarImage src={item.urlLogo ?? item.logoUrl} name={item.name} size={48}/><div className="entity-list-info"><strong>{item.name}</strong><span>{item.contactEmail || "Sin correo"}</span></div><span className={`entity-status ${Number(item.status ?? 1) === 1 ? "is-active" : ""}`}>{Number(item.status ?? 1) === 1 ? "Activo" : "Inactivo"}</span></article>)}</div>}
       </div>
     </div>
   </section>;

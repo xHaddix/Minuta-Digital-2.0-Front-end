@@ -47,6 +47,8 @@ export function VisitorsPage() {
   const [exitingVisitorId, setExitingVisitorId] = useState<string | null>(null);
   const [unitOptions, setUnitOptions] = useState<SelectOption[]>([]);
   const [isLoadingUnits, setIsLoadingUnits] = useState(false);
+  const [unitLoadError, setUnitLoadError] = useState(false);
+  const hasActiveVisitors = visitors.some(isVisitorActive);
 
   useEffect(() => {
     const loadVisitors = async () => {
@@ -71,6 +73,7 @@ export function VisitorsPage() {
 
     const loadUnits = async () => {
       setIsLoadingUnits(true);
+      setUnitLoadError(false);
       try {
         const apartments = await fetchApartments();
         const units = apartments
@@ -101,9 +104,8 @@ export function VisitorsPage() {
           ...units,
         ]);
       } catch {
-        setUnitOptions([
-          { value: "", label: "No hay apartamentos disponibles" },
-        ]);
+        setUnitOptions([{ value: "", label: "Apartamentos no disponibles" }]);
+        setUnitLoadError(true);
       } finally {
         setIsLoadingUnits(false);
       }
@@ -234,16 +236,14 @@ export function VisitorsPage() {
                 <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
                   ESTADO
                 </th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
-                  ACCIONES
-                </th>
+                {hasActiveVisitors && <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>ACCIONES</th>}
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={hasActiveVisitors ? 6 : 5}
                     className="px-4 py-6 text-center text-slate-500"
                     style={{
                       textAlign: "center",
@@ -257,7 +257,7 @@ export function VisitorsPage() {
               ) : visitors.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={hasActiveVisitors ? 6 : 5}
                     className="px-4 py-6 text-center text-slate-500"
                     style={{
                       textAlign: "center",
@@ -296,10 +296,9 @@ export function VisitorsPage() {
                           marginTop: "0.15rem",
                         }}
                       >
-                        {visitor.documentType || "Documento"}
                         {visitor.documentNumber
-                          ? ` - ${visitor.documentNumber}`
-                          : ""}
+                          ? `${visitor.documentType || "Documento"} - ${visitor.documentNumber}`
+                          : visitor.documentType || "Sin documento registrado"}
                       </div>
                     </td>
                     <td
@@ -342,7 +341,7 @@ export function VisitorsPage() {
                         {active ? "ACTIVO" : "FINALIZADO"}
                       </span>
                     </td>
-                    <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
+                    {hasActiveVisitors && <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
                       {active ? (
                         <button
                           type="button"
@@ -364,10 +363,8 @@ export function VisitorsPage() {
                             ? "Guardando..."
                             : "Registrar salida"}
                         </button>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
+                      ) : null}
+                    </td>}
                   </tr>
                   );
                 })
@@ -448,6 +445,13 @@ export function VisitorsPage() {
                     isSubmitting || isLoadingUnits || unitOptions.length <= 1
                   }
                 />
+                {!isLoadingUnits && unitOptions.length <= 1 && (
+                  <small className={unitLoadError ? "field-validation-message" : "entity-help"} role={unitLoadError ? "alert" : undefined}>
+                    {unitLoadError
+                      ? "No se pudieron cargar los apartamentos. Puedes continuar sin asignar una unidad."
+                      : "Este conjunto no tiene apartamentos registrados. Puedes registrar al visitante sin asignar una unidad."}
+                  </small>
+                )}
               </div>
               <div
                 className="modal-actions"

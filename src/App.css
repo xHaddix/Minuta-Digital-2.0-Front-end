@@ -1100,15 +1100,6 @@
   cursor: not-allowed;
 }
 
-.context-modal-footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 18px;
-  color: rgba(209, 222, 255, 0.82);
-  font-size: 0.78rem;
-}
-
 .layout-shell {
   min-height: 100vh;
   display: flex;
@@ -2017,6 +2008,31 @@
   gap: 18px;
 }
 
+.users-row-identity,
+.users-row-copy {
+  min-width: 0;
+}
+
+.users-row-copy {
+  flex: 1 1 auto;
+  max-width: 340px;
+}
+
+.users-row-name {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.users-row-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .apartments-page {
   display: grid;
   gap: 18px;
@@ -2024,6 +2040,17 @@
 
 .apartments-table-card {
   animation: dashboard-panel-rise 0.45s ease both;
+}
+
+.apartments-create-button {
+  display: inline-flex;
+  width: auto;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.95rem;
+  white-space: nowrap;
 }
 
 .apartments-subtitle {
@@ -3007,6 +3034,11 @@
     justify-content: center;
   }
 
+  .apartments-page .section-header > .apartments-create-button {
+    align-self: flex-end;
+    width: auto;
+  }
+
   .users-page .section-header > div {
     flex-wrap: wrap;
   }
@@ -3027,11 +3059,6 @@
     min-height: 40px;
     padding: 0.55rem 0.75rem;
     font-size: 0.82rem;
-  }
-
-  .context-modal-footer {
-    align-items: flex-start;
-    line-height: 1.5;
   }
 
   .entity-admin-heading,

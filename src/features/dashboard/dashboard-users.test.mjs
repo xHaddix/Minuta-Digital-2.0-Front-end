@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getDashboardUsers } from "./dashboard-users.mjs";
+import { countPendingActivationUsers, getDashboardUsers } from "./dashboard-users.mjs";
 
 const users = [
   { id: "resident", residentialComplexId: "complex-a", status: 1, role: { code: "ROLE_RESIDENT" } },
@@ -18,4 +18,8 @@ test("dashboard users are scoped to the selected complex and omit developers", (
 
 test("dashboard doesn't count users across all complexes without a selected complex", () => {
   assert.deepEqual(getDashboardUsers(users, null), []);
+});
+
+test("only pending activation users are reported as pending; inactive users are excluded", () => {
+  assert.equal(countPendingActivationUsers(getDashboardUsers(users, "complex-a")), 1);
 });

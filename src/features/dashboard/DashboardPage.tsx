@@ -8,7 +8,7 @@ import type { User } from "../../types/user";
 import type { VisitorListItem } from "../../types/visitor";
 import { CustomSelect, type SelectOption } from "../../components/ui/Select";
 import { isVisitorActive } from "../visitors/visitor-status.mjs";
-import { getDashboardUsers } from "./dashboard-users.mjs";
+import { countPendingActivationUsers, getDashboardUsers } from "./dashboard-users.mjs";
 
 const formatTime = (value?: string | null) => {
   if (!value) return "—";
@@ -99,35 +99,31 @@ export function DashboardPage() {
     }
     return visitors;
   }, [visitors, visitorFilter]);
+  const showCheckoutActions = can("visitors:check_out") && filteredVisitors.some(isVisitorActive);
 
   const metrics = useMemo(() => {
     const activeVisitors = visitors.filter(isVisitorActive).length;
-
-    // Evaluamos el status numérico real de PostgreSQL (2 = PENDIENTE, 0 = INACTIVO)
-    const pendingUsers = usersInActiveComplex.filter(
-      (item) => item.status === 2 || item.status === 0,
-    ).length;
+    const now = new Date();
+    const visitorsToday = visitors.filter((visitor) => {
+      if (!visitor.entryTime) return false;
+      const entryDate = new Date(visitor.entryTime);
+      return !Number.isNaN(entryDate.getTime()) &&
+        entryDate.getFullYear() === now.getFullYear() &&
+        entryDate.getMonth() === now.getMonth() &&
+        entryDate.getDate() === now.getDate();
+    }).length;
+    const pendingUsers = countPendingActivationUsers(usersInActiveComplex);
 
     return [
       {
         title: "Visitantes hoy",
-        value: String(visitors.length),
-        meta: `${activeVisitors} activos ahora`,
-      },
-      {
-        title: "Activos en conjunto",
-        value: String(activeVisitors),
-        meta: `${visitors.length - activeVisitors} con salida registrada`,
+        value: String(visitorsToday),
+        meta: `${activeVisitors} dentro del conjunto ahora`,
       },
       {
         title: "Usuarios del conjunto",
         value: String(usersInActiveComplex.length),
         meta: `${pendingUsers} pendientes por activar`,
-      },
-      {
-        title: "Solicitudes por revisar",
-        value: String(pendingUsers),
-        meta: pendingUsers > 0 ? "Requieren atención" : "Sin pendientes",
       },
     ];
   }, [usersInActiveComplex, visitors]);
@@ -136,7 +132,6 @@ export function DashboardPage() {
     session?.roleCode === "ROLE_RESIDENT"
       ? metrics.filter(
           (card) =>
-            card.title !== "Activos en conjunto" &&
             card.title !== "Usuarios del conjunto",
         )
       : metrics;
@@ -179,11 +174,6 @@ export function DashboardPage() {
             />
           </div>
 
-          {can("visitors:create") && (
-            <button type="button" className="inline-button">
-              Registrar ingreso
-            </button>
-          )}
         </div>
 
         <div className="table-wrap">
@@ -196,19 +186,19 @@ export function DashboardPage() {
                 <th>Ingreso</th>
                 <th>Salida</th>
                 <th>Estado</th>
-                <th>Acción</th>
+                {showCheckoutActions && <th>Acción</th>}
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="empty-row">
+                  <td colSpan={showCheckoutActions ? 7 : 6} className="empty-row">
                     Cargando movimientos del conjunto...
                   </td>
                 </tr>
               ) : filteredVisitors.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="empty-row">
+                  <td colSpan={showCheckoutActions ? 7 : 6} className="empty-row">
                     No hay visitantes que coincidan con el filtro.
                   </td>
                 </tr>
@@ -233,8 +223,8 @@ export function DashboardPage() {
                           {status}
                         </span>
                       </td>
-                      <td>
-                        {can("visitors:check_out") && isActive && (
+                      {showCheckoutActions && <td>
+                        {isActive && (
                           <button
                             type="button"
                             className="inline-button"
@@ -248,7 +238,7 @@ export function DashboardPage() {
                               : "Registrar salida"}
                           </button>
                         )}
-                      </td>
+                      </td>}
                     </tr>
                   );
                 })

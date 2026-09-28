@@ -4,3 +4,6 @@ export const getDashboardUsers = (users, activeComplexId) => {
     user.residentialComplexId === activeComplexId && user.role?.code !== "ROLE_DEV",
   );
 };
+
+export const countPendingActivationUsers = (users) =>
+  users.filter((user) => user.status === 2).length;

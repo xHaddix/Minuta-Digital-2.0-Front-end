@@ -351,10 +351,10 @@ export function ApartmentsPage() {
           </div>
           <button
             type="button"
-            className="inline-button users-primary-button"
+            className="inline-button apartments-create-button"
             onClick={openCreateModal}
           >
-            <Plus size={16} />
+            <Plus size={17} aria-hidden="true" />
             Crear apartamento
           </button>
         </div>
