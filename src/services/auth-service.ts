@@ -1,3 +1,4 @@
+import axios, { type AxiosResponse } from "axios";
 import api, { setApiAccessToken } from "./api";
 import { AUTH_ENDPOINTS } from "../config/app";
 import type {
@@ -11,11 +12,35 @@ export const login = async (
   password: string,
   rememberMe = false,
 ): Promise<LoginResponse> => {
-  const response = await api.post<LoginResponse>(AUTH_ENDPOINTS.login, {
-    email,
-    password,
-    rememberMe,
-  });
+  let response: AxiosResponse<LoginResponse>;
+
+  try {
+    response = await api.post<LoginResponse>(AUTH_ENDPOINTS.login, {
+      email,
+      password,
+      rememberMe,
+    });
+  } catch (error) {
+    const message = axios.isAxiosError<{ message?: string | string[] }>(error)
+      ? error.response?.data?.message
+      : undefined;
+    const messages = Array.isArray(message) ? message : [message];
+    const backendDoesNotSupportRememberMe = messages.some(
+      (item) =>
+        typeof item === "string" &&
+        item.toLowerCase().includes("property rememberme should not exist"),
+    );
+
+    if (!rememberMe || !backendDoesNotSupportRememberMe) {
+      throw error;
+    }
+
+    // Permite iniciar sesión mientras el backend desplegado se actualiza.
+    response = await api.post<LoginResponse>(AUTH_ENDPOINTS.login, {
+      email,
+      password,
+    });
+  }
 
   setApiAccessToken(response.data.accessToken);
   return response.data;

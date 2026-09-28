@@ -209,12 +209,12 @@ export function DashboardPage() {
 
                   return (
                     <tr key={visitor.id}>
-                      <td>{visitor.fullName}</td>
-                      <td>{visitor.documentNumber ?? "—"}</td>
-                      <td>{visitor.unitTarget ?? visitor.unitNumber ?? "—"}</td>
-                      <td>{formatTime(visitor.entryTime)}</td>
-                      <td>{formatTime(visitor.exitTime)}</td>
-                      <td>
+                      <td data-label="Visitante">{visitor.fullName}</td>
+                      <td data-label="Documento">{visitor.documentNumber ?? "—"}</td>
+                      <td data-label="Unidad / apto">{visitor.unitTarget ?? visitor.unitNumber ?? "—"}</td>
+                      <td data-label="Ingreso">{formatTime(visitor.entryTime)}</td>
+                      <td data-label="Salida">{formatTime(visitor.exitTime)}</td>
+                      <td data-label="Estado">
                         <span
                           className={`status-badge ${
                             isActive ? "success" : "warning"
@@ -223,7 +223,7 @@ export function DashboardPage() {
                           {status}
                         </span>
                       </td>
-                      {showCheckoutActions && <td>
+                      {showCheckoutActions && <td data-label="Acción">
                         {isActive && (
                           <button
                             type="button"

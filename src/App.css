@@ -2832,7 +2832,17 @@
   }
 
   .layout-shell .context-switcher-copy {
-    display: none !important;
+    display: grid;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .layout-shell .context-switcher-copy small,
+  .layout-shell .context-switcher-copy strong {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .entity-admin-heading h1 {
@@ -3105,5 +3115,221 @@
 
   .entity-logo-picker {
     align-items: flex-start;
+  }
+}
+
+/* Compact mobile layouts for the context picker and dashboard. */
+@media (max-width: 640px) {
+  .context-modal-backdrop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: max(0.5rem, env(safe-area-inset-top)) 0.5rem
+      max(0.5rem, env(safe-area-inset-bottom));
+    overflow-y: auto;
+  }
+
+  .context-modal-card.context-modal-card--wide {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - 1rem);
+    margin-block: auto;
+    padding: 1rem;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    border-radius: 16px;
+  }
+
+  .context-modal-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .context-modal-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+  }
+
+  .context-modal-title-group > div:last-child {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .context-modal-title-group h2 {
+    font-size: clamp(1.35rem, 5.5vw, 1.75rem);
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+    overflow-wrap: break-word;
+  }
+
+  .context-subtitle {
+    overflow-wrap: anywhere;
+  }
+
+  .context-modal-header-actions {
+    justify-content: flex-end;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .context-controls-bar {
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 1rem;
+  }
+
+  .context-search-input-wrap,
+  .context-sort-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .context-sort-button {
+    justify-content: center;
+  }
+
+  .context-counter-label {
+    margin-bottom: 0.75rem;
+  }
+
+  .context-cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: none;
+    overflow: visible;
+    gap: 0.75rem;
+  }
+
+  .context-modal-card--wide .entity-card-media {
+    height: clamp(100px, 32vw, 150px);
+  }
+
+  .dashboard-view {
+    gap: 14px;
+  }
+
+  .dashboard-view .metric-card {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .dashboard-view .metric-card .value {
+    margin-top: 10px;
+  }
+
+  .dashboard-view .table-wrap {
+    padding: 0 12px 12px;
+    overflow: visible;
+  }
+
+  .dashboard-view .data-table {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    border-collapse: separate;
+  }
+
+  .dashboard-view .data-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .dashboard-view .data-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .dashboard-view .data-table tbody tr {
+    display: grid;
+    gap: 0;
+    padding: 8px 12px;
+    border: 1px solid rgba(96, 138, 214, 0.28);
+    border-radius: 12px;
+    background: rgba(13, 27, 48, 0.72);
+  }
+
+  .dashboard-view .data-table tbody td {
+    display: grid;
+    grid-template-columns: minmax(90px, 0.7fr) minmax(0, 1.3fr);
+    gap: 10px;
+    padding: 8px 0;
+    overflow-wrap: anywhere;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  }
+
+  .dashboard-view .data-table tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  .dashboard-view .data-table tbody td[data-label]::before {
+    content: attr(data-label);
+    color: rgba(184, 199, 226, 0.7);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .dashboard-view .data-table tbody td.empty-row {
+    display: block;
+    padding: 16px 8px;
+    border: 0;
+    text-align: center;
+  }
+
+  .dashboard-view .data-table tbody td.empty-row::before {
+    content: none;
+  }
+
+  .layout-shell .topbar-group:last-child {
+    min-width: 0;
+  }
+
+  .layout-shell .context-switcher {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .context-modal-card.context-modal-card--wide {
+    padding: 0.8rem;
+  }
+
+  .context-modal-title-group {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .context-modal-title-group .context-modal-icon {
+    grid-column: 1;
+    grid-row: 1;
+    width: 42px;
+    height: 42px;
+  }
+
+  .context-modal-title-group h2 {
+    font-size: 1.3rem;
+  }
+
+  .context-modal-title-group > div:last-child {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .context-modal-title-group .context-back-button {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    height: 40px;
   }
 }
