@@ -142,7 +142,7 @@ export const useAuth = () => {
 
   const login = useCallback(
     async (email: string, password: string, rememberMe: boolean) => {
-      const data = await loginRequest(email, password);
+      const data = await loginRequest(email, password, rememberMe);
 
       const requiresContextSelection =
         data.user.roleCode === "ROLE_DEV" ||

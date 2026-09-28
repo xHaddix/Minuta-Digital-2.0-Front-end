@@ -9,10 +9,12 @@ import type {
 export const login = async (
   email: string,
   password: string,
+  rememberMe = false,
 ): Promise<LoginResponse> => {
   const response = await api.post<LoginResponse>(AUTH_ENDPOINTS.login, {
     email,
     password,
+    rememberMe,
   });
 
   setApiAccessToken(response.data.accessToken);
