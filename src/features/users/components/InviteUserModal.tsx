@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import {
   fetchDocumentTypes,
   fetchAssignableRoles,
@@ -15,6 +16,7 @@ import type {
   ResidentialComplex,
   Role,
 } from "../../../types/user";
+import { getApiErrorMessage } from "../../../utils/api-error-message.mjs";
 
 interface InviteUserModalProps {
   isOpen: boolean;
@@ -90,12 +92,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
           setComplexes(complexesData);
         }
       } catch (err: unknown) {
-        const message =
-          err && typeof err === "object" && "response" in err
-            ? (err as { response?: { data?: { message?: string } } }).response
-                ?.data?.message
-            : undefined;
-        setError(message || "Error al cargar los catálogos requeridos.");
+        setError(getApiErrorMessage(err, "Error al cargar los catálogos requeridos."));
       } finally {
         setLoading(false);
       }
@@ -157,12 +154,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
         onClose();
       }, 1200);
     } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { message?: string } } }).response
-              ?.data?.message
-          : undefined;
-      setError(message || "Ocurrió un error al procesar la invitación.");
+      setError(getApiErrorMessage(err, "Ocurrió un error al procesar la invitación."));
     } finally {
       setSubmitting(false);
     }
@@ -195,6 +187,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
   return (
     <div className="modal-backdrop">
       <div className="modal-content overflow-visible">
+        <button type="button" className="modal-dismiss-button" onClick={onClose} disabled={submitting} aria-label="Cerrar invitación de usuario" title="Cerrar"><X size={19}/></button>
         <h2>Invitar Nuevo Usuario</h2>
 
         {error && <div className="dashboard-alert">{error}</div>}

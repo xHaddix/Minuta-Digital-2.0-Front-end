@@ -131,7 +131,9 @@ a {
   list-style: none;
   z-index: 100; /* Superpone sobre tablas y tarjetas con z-index estándar */
   max-height: 220px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .animated-dropdown {
@@ -214,11 +216,14 @@ a {
 }
 
 .custom-select-list {
+  min-height: 0;
+  flex: 1 1 auto;
   padding: 0.375rem;
   margin: 0;
   list-style: none;
   max-height: 180px;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .custom-select-empty {
@@ -438,6 +443,53 @@ a {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex: 0 0 auto;
+  margin-left: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.context-modal-title-group {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.context-modal-title-group > div:last-child {
+  min-width: 0;
+}
+
+.context-close-button {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.context-close-button:hover:not(:disabled) {
+  border-color: rgba(129, 140, 248, 0.72);
+  background: rgba(99, 102, 241, 0.18);
+  color: #fff;
+}
+
+.context-close-button:focus-visible,
+.profile-close-button:focus-visible,
+.modal-dismiss-button:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
+.context-close-button:disabled,
+.modal-dismiss-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .context-logo-upload {
@@ -572,6 +624,7 @@ a {
 
 /* Contenedor del Modal (Slate Dark) */
 .modal-content {
+  position: relative;
   background-color: #1e293b;
   border: 1px solid #334155;
   border-radius: 0.75rem;
@@ -587,6 +640,35 @@ a {
   flex-direction: column;
   flex: 0 0 auto;
   margin-block: auto;
+}
+
+.modal-dismiss-button {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 3;
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #3b4a61;
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.modal-dismiss-button:hover:not(:disabled) {
+  border-color: #818cf8;
+  background: rgba(99, 102, 241, 0.18);
+  color: #fff;
+}
+
+.modal-content > h2,
+.modal-content > h3 {
+  padding-right: 2.8rem;
 }
 
 /* Evita que CustomSelect sea cortado por el contenedor */

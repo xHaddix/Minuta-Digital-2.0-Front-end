@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
 import { fetchUsers, deleteUser } from "../../services/user-service";
 import { InviteUserModal } from "./components/InviteUserModal";
 import { EditUserModal } from "./components/EditUserModel";
@@ -13,6 +14,7 @@ import {
   ADMINISTRATORS_FILTER,
   filterUsers,
 } from "./user-filter.mjs";
+import { getApiErrorMessage } from "../../utils/api-error-message.mjs";
 
 export const UsersPage: React.FC = () => {
   const { session } = useAuth();
@@ -46,12 +48,7 @@ export const UsersPage: React.FC = () => {
       const data = await fetchUsers();
       setUsers(data);
     } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { message?: string } } }).response
-              ?.data?.message
-          : undefined;
-      setError(message || "Error al cargar la lista de usuarios.");
+      setError(getApiErrorMessage(err, "Error al cargar la lista de usuarios."));
     } finally {
       setLoading(false);
     }
@@ -91,12 +88,7 @@ export const UsersPage: React.FC = () => {
 
       setTimeout(() => setActionSuccess(null), 3000);
     } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { message?: string } } }).response
-              ?.data?.message
-          : undefined;
-      setError(message || "No se pudo completar la eliminación del usuario.");
+      setError(getApiErrorMessage(err, "No se pudo completar la eliminación del usuario."));
     } finally {
       setDeleting(false);
     }
@@ -512,6 +504,7 @@ export const UsersPage: React.FC = () => {
       {userToDelete && (
         <div className="modal-backdrop">
           <div className="modal-content">
+            <button type="button" className="modal-dismiss-button" onClick={() => setUserToDelete(null)} disabled={deleting} aria-label="Cerrar confirmación" title="Cerrar"><X size={19}/></button>
             <h3>
               {userToDelete.status === 2
                 ? "Eliminar Invitación Pendiente"

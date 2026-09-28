@@ -8,14 +8,7 @@ import { createResidentialComplex, fetchOrganizations, fetchResidentialComplexes
 import { uploadComplexLogo } from "../../services/storage-service";
 import type { Organization } from "../../types/auth";
 import type { ResidentialComplex } from "../../types/user";
-
-const messageOf = (error: unknown) => {
-  if (error && typeof error === "object" && "response" in error) {
-    const message = (error as { response?: { data?: { message?: string | string[] } } }).response?.data?.message;
-    return Array.isArray(message) ? message.join(". ") : message;
-  }
-  return error instanceof Error ? error.message : undefined;
-};
+import { getApiErrorMessage } from "../../utils/api-error-message.mjs";
 const slugify = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export function ComplexesPage() {
@@ -48,7 +41,7 @@ export function ComplexesPage() {
         isDev ? fetchOrganizations() : Promise.resolve([] as Organization[]),
       ]);
       setItems(complexList); setOrganizations(organizationList); setError("");
-    } catch (err) { setError(messageOf(err) || "No fue posible cargar los conjuntos residenciales."); }
+    } catch (err) { setError(getApiErrorMessage(err, "No fue posible cargar los conjuntos residenciales.")); }
     finally { setLoading(false); }
   };
   useEffect(() => { void load(); }, [organizationId, isDev]);
@@ -62,7 +55,7 @@ export function ComplexesPage() {
       if (logo) { try { const uploaded = await uploadComplexLogo(created.id, logo); created.urlLogo = uploaded.urlLogo; } catch { logoFailed = true; } }
       setItems((current) => [created, ...current]); setForm({ name: "", slug: "", organizationId: isDev ? form.organizationId : organizationId, contactEmail: "", contactPhone: "", planCode: "BASIC" }); setLogo(null);
       setNotice(logoFailed ? "Conjunto creado; el logo no se pudo cargar. Puedes volver a intentarlo desde el selector de contexto." : "Conjunto residencial creado correctamente.");
-    } catch (err) { setError(messageOf(err) || "No se pudo crear el conjunto residencial."); }
+    } catch (err) { setError(getApiErrorMessage(err, "No se pudo crear el conjunto residencial.")); }
     finally { setSaving(false); }
   };
   return <section className="entity-admin-page entity-admin-page--animated">

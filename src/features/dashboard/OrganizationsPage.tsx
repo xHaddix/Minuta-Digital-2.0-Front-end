@@ -6,14 +6,7 @@ import { useAuth } from "../../auth/useAuth";
 import { createOrganization, fetchOrganizations } from "../../services/auth-context";
 import { uploadOrganizationLogo } from "../../services/storage-service";
 import type { Organization } from "../../types/auth";
-
-const messageOf = (error: unknown) => {
-  if (error && typeof error === "object" && "response" in error) {
-    const message = (error as { response?: { data?: { message?: string | string[] } } }).response?.data?.message;
-    return Array.isArray(message) ? message.join(". ") : message;
-  }
-  return error instanceof Error ? error.message : undefined;
-};
+import { getApiErrorMessage } from "../../utils/api-error-message.mjs";
 
 export function OrganizationsPage() {
   const { session } = useAuth();
@@ -25,7 +18,7 @@ export function OrganizationsPage() {
   const [notice, setNotice] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
   const [form, setForm] = useState({ name: "", identification: "", contactEmail: "", contactPhone: "" });
-  const load = async () => { setLoading(true); try { setItems(await fetchOrganizations()); setError(""); } catch (err) { setError(messageOf(err) || "No fue posible cargar las organizaciones."); } finally { setLoading(false); } };
+  const load = async () => { setLoading(true); try { setItems(await fetchOrganizations()); setError(""); } catch (err) { setError(getApiErrorMessage(err, "No fue posible cargar las organizaciones.")); } finally { setLoading(false); } };
   useEffect(() => { void load(); }, []);
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setSaving(true); setError(""); setNotice("");
@@ -35,7 +28,7 @@ export function OrganizationsPage() {
       if (logo) { try { const uploaded = await uploadOrganizationLogo(created.id, logo); created.urlLogo = uploaded.urlLogo; } catch { logoFailed = true; } }
       setItems((current) => [created, ...current]); setForm({ name: "", identification: "", contactEmail: "", contactPhone: "" }); setLogo(null);
       setNotice(logoFailed ? "Organización creada; el logo no se pudo cargar. Puedes volver a intentarlo desde el selector de contexto." : "Organización creada correctamente.");
-    } catch (err) { setError(messageOf(err) || "No se pudo crear la organización."); } finally { setSaving(false); }
+    } catch (err) { setError(getApiErrorMessage(err, "No se pudo crear la organización.")); } finally { setSaving(false); }
   };
   return <section className="entity-admin-page entity-admin-page--animated">
     <header className="entity-admin-heading"><div><span className="entity-admin-eyebrow">Administración global</span><h1>Organizaciones</h1><p>Gestiona las organizaciones y sus datos de contacto.</p></div><button type="button" className="secondary-button entity-refresh" onClick={() => void load()} disabled={loading}><RefreshCw size={16}/>Actualizar</button></header>

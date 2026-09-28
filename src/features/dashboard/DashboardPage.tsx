@@ -7,6 +7,8 @@ import { fetchVisitors, markVisitorExit } from "../../services/visitor-service";
 import type { User } from "../../types/user";
 import type { VisitorListItem } from "../../types/visitor";
 import { CustomSelect, type SelectOption } from "../../components/ui/Select";
+import { isVisitorActive } from "../visitors/visitor-status.mjs";
+import { getDashboardUsers } from "./dashboard-users.mjs";
 
 const formatTime = (value?: string | null) => {
   if (!value) return "—";
@@ -28,6 +30,7 @@ const VISITOR_FILTER_OPTIONS: SelectOption[] = [
 
 export function DashboardPage() {
   const { session, can } = useAuth();
+  const activeComplexId = session?.residentialComplexId ?? session?.user?.residentialComplexId ?? null;
   const [visitors, setVisitors] = useState<VisitorListItem[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,23 +83,28 @@ export function DashboardPage() {
 
   useEffect(() => {
     void loadDashboardData();
-  }, [loadDashboardData, session?.residentialComplexId, session?.accessToken]);
+  }, [loadDashboardData, activeComplexId, session?.accessToken]);
+
+  const usersInActiveComplex = useMemo(
+    () => getDashboardUsers(users, activeComplexId),
+    [users, activeComplexId],
+  );
 
   const filteredVisitors = useMemo(() => {
     if (visitorFilter === "INSIDE") {
-      return visitors.filter((item) => !item.exitTime);
+      return visitors.filter(isVisitorActive);
     }
     if (visitorFilter === "EXITED") {
-      return visitors.filter((item) => Boolean(item.exitTime));
+      return visitors.filter((item) => !isVisitorActive(item));
     }
     return visitors;
   }, [visitors, visitorFilter]);
 
   const metrics = useMemo(() => {
-    const activeVisitors = visitors.filter((item) => !item.exitTime).length;
+    const activeVisitors = visitors.filter(isVisitorActive).length;
 
     // Evaluamos el status numérico real de PostgreSQL (2 = PENDIENTE, 0 = INACTIVO)
-    const pendingUsers = users.filter(
+    const pendingUsers = usersInActiveComplex.filter(
       (item) => item.status === 2 || item.status === 0,
     ).length;
 
@@ -113,7 +121,7 @@ export function DashboardPage() {
       },
       {
         title: "Usuarios del conjunto",
-        value: String(users.length),
+        value: String(usersInActiveComplex.length),
         meta: `${pendingUsers} pendientes por activar`,
       },
       {
@@ -122,7 +130,7 @@ export function DashboardPage() {
         meta: pendingUsers > 0 ? "Requieren atención" : "Sin pendientes",
       },
     ];
-  }, [users, visitors]);
+  }, [usersInActiveComplex, visitors]);
 
   const visibleMetrics =
     session?.roleCode === "ROLE_RESIDENT"
@@ -206,7 +214,7 @@ export function DashboardPage() {
                 </tr>
               ) : (
                 filteredVisitors.map((visitor) => {
-                  const isActive = !visitor.exitTime;
+                  const isActive = isVisitorActive(visitor);
                   const status = isActive ? "ENTRÓ" : "SALIDA";
 
                   return (
@@ -226,7 +234,7 @@ export function DashboardPage() {
                         </span>
                       </td>
                       <td>
-                        {can("visitors:check_out") && (
+                        {can("visitors:check_out") && isActive && (
                           <button
                             type="button"
                             className="inline-button"
@@ -237,7 +245,7 @@ export function DashboardPage() {
                           >
                             {processingVisitorId === visitor.id
                               ? "Procesando..."
-                              : "Check out"}
+                              : "Registrar salida"}
                           </button>
                         )}
                       </td>

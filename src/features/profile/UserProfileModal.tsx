@@ -10,6 +10,7 @@ import {
 } from "../../services/user-service";
 import { uploadOwnUserAvatar } from "../../services/storage-service";
 import type { DocumentType, User } from "../../types/user";
+import { getApiErrorMessage } from "../../utils/api-error-message.mjs";
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -18,15 +19,6 @@ interface UserProfileModalProps {
   onClose: () => void;
   onSaved: (user: User) => void;
 }
-
-const getErrorMessage = (error: unknown) => {
-  if (!error || typeof error !== "object" || !("response" in error)) {
-    return "No se pudo cargar tu perfil.";
-  }
-  const message = (error as { response?: { data?: { message?: string | string[] } } })
-    .response?.data?.message;
-  return Array.isArray(message) ? message.join(" ") : message || "No se pudo guardar tu perfil.";
-};
 
 export function UserProfileModal({
   isOpen,
@@ -66,7 +58,7 @@ export function UserProfileModal({
         setAvatarFile(null);
       })
       .catch((loadError: unknown) => {
-        if (!cancelled) setError(getErrorMessage(loadError));
+        if (!cancelled) setError(getApiErrorMessage(loadError, "No se pudo cargar tu perfil."));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -109,7 +101,7 @@ export function UserProfileModal({
       onSaved(finalUser);
       setIsUpdated(true);
     } catch (saveError: unknown) {
-      setError(getErrorMessage(saveError));
+      setError(getApiErrorMessage(saveError, "No se pudo guardar tu perfil."));
     } finally {
       setSubmitting(false);
     }

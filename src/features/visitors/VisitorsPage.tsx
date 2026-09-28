@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { LogOut, Plus } from "lucide-react";
+import { LogOut, Plus, X } from "lucide-react";
 import {
   fetchVisitors,
   markVisitorExit,
@@ -9,6 +9,7 @@ import {
 import { CustomSelect, type SelectOption } from "../../components/ui/Select";
 import { fetchApartments } from "../../services/apartment-service";
 import { VISITOR_UPDATED_EVENT } from "../../notifications/useNotifications";
+import { isVisitorActive } from "./visitor-status.mjs";
 import type {
   RegisterVisitorEntryPayload,
   VisitorListItem,
@@ -268,7 +269,9 @@ export function VisitorsPage() {
                   </td>
                 </tr>
               ) : (
-                visitors.map((visitor) => (
+                visitors.map((visitor) => {
+                  const active = isVisitorActive(visitor);
+                  return (
                   <tr
                     key={visitor.id}
                     style={{
@@ -328,7 +331,7 @@ export function VisitorsPage() {
                     </td>
                     <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
                       <span
-                        className={`status-badge ${visitor.status === "active" ? "success" : "warning"}`}
+                        className={`status-badge ${active ? "success" : "warning"}`}
                         style={{
                           borderRadius: "9999px",
                           padding: "0.2rem 0.6rem",
@@ -336,11 +339,11 @@ export function VisitorsPage() {
                           fontWeight: 700,
                         }}
                       >
-                        {visitor.status === "active" ? "ACTIVO" : "FINALIZADO"}
+                        {active ? "ACTIVO" : "FINALIZADO"}
                       </span>
                     </td>
                     <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
-                      {visitor.status === "active" ? (
+                      {active ? (
                         <button
                           type="button"
                           className="inline-button"
@@ -366,7 +369,8 @@ export function VisitorsPage() {
                       )}
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -376,6 +380,7 @@ export function VisitorsPage() {
       {isEntryModalOpen ? (
         <div className="modal-backdrop">
           <div className="modal-content overflow-visible">
+            <button type="button" className="modal-dismiss-button" onClick={() => setIsEntryModalOpen(false)} disabled={isSubmitting} aria-label="Cerrar registro de visitante" title="Cerrar"><X size={19}/></button>
             <h2>Registrar Nuevo Visitante</h2>
 
             {error && <div className="dashboard-alert">{error}</div>}

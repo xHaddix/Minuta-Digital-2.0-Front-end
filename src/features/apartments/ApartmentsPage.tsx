@@ -8,6 +8,7 @@ import {
   Trash2,
   UsersRound,
   UserRoundPlus,
+  X,
 } from "lucide-react";
 import { CustomSelect, type SelectOption } from "../../components/ui/Select";
 import {
@@ -588,6 +589,7 @@ export function ApartmentsPage() {
       {isModalOpen ? (
         <div className="modal-backdrop">
           <div className="modal-content overflow-visible">
+            <button type="button" className="modal-dismiss-button" onClick={() => setIsModalOpen(false)} disabled={submitting} aria-label="Cerrar formulario de apartamento" title="Cerrar"><X size={19}/></button>
             <h2>
               {editingApartment
                 ? "Editar Apartamento"
@@ -661,6 +663,7 @@ export function ApartmentsPage() {
       {assignmentApartment ? (
         <div className="modal-backdrop">
           <div className="modal-content overflow-visible">
+            <button type="button" className="modal-dismiss-button" onClick={() => setAssignmentApartment(null)} disabled={assigning} aria-label="Cerrar asignación de residente" title="Cerrar"><X size={19}/></button>
             <h2>Asignar residente</h2>
             <p className="apartments-modal-context">
               Unidad seleccionada:{" "}
@@ -722,6 +725,7 @@ export function ApartmentsPage() {
       {managingResidentsApartment ? (
         <div className="modal-backdrop">
           <div className="modal-content apartment-residents-modal">
+            <button type="button" className="modal-dismiss-button" onClick={() => setManagingResidentsApartment(null)} aria-label="Cerrar residentes asignados" title="Cerrar"><X size={19}/></button>
             <h2>Residentes asignados</h2>
             <p className="apartments-modal-context">
               Unidad: <strong>{managingResidentsApartment.unitNumber}</strong>

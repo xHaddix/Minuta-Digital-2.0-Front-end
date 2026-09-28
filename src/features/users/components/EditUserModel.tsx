@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import {
   fetchDocumentTypes,
   fetchAssignableRoles,
@@ -9,6 +10,7 @@ import { CheckIcon } from "../../../components/icons/CheckIcon";
 import { ImageUploadField } from "../../../components/ui/ImageUploadField";
 import { uploadUserAvatar } from "../../../services/storage-service";
 import { buildUpdateUserPayload } from "./edit-user-payload";
+import { getApiErrorMessage } from "../../../utils/api-error-message.mjs";
 import type {
   DocumentType,
   Role,
@@ -76,12 +78,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
         setDocumentTypes(docsData);
         setRoles(rolesData);
       } catch (err: unknown) {
-        const message =
-          err && typeof err === "object" && "response" in err
-            ? (err as { response?: { data?: { message?: string } } }).response
-                ?.data?.message
-            : undefined;
-        setError(message || "Error al cargar los catálogos del formulario.");
+        setError(getApiErrorMessage(err, "Error al cargar los catálogos del formulario."));
       } finally {
         setLoading(false);
       }
@@ -125,14 +122,9 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
         onClose();
       }, 1000);
     } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { message?: string } } }).response
-              ?.data?.message
-          : undefined;
       setError(profileUpdated
         ? "Los datos se guardaron, pero ocurrió un error al actualizar la foto."
-        : message || "Ocurrió un error al actualizar el usuario.");
+        : getApiErrorMessage(err, "Ocurrió un error al actualizar el usuario."));
     } finally {
       setSubmitting(false);
     }
@@ -164,6 +156,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
   return (
     <div className="modal-backdrop">
       <div className="modal-content overflow-visible edit-user-modal">
+        <button type="button" className="modal-dismiss-button" onClick={onClose} disabled={submitting} aria-label="Cerrar edición de usuario" title="Cerrar"><X size={19}/></button>
         <h2>Editar Usuario</h2>
 
         {error && <div className="dashboard-alert">{error}</div>}
