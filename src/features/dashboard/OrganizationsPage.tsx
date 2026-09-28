@@ -37,7 +37,7 @@ export function OrganizationsPage() {
       setNotice(logoFailed ? "Organización creada; el logo no se pudo cargar. Puedes volver a intentarlo desde el selector de contexto." : "Organización creada correctamente.");
     } catch (err) { setError(messageOf(err) || "No se pudo crear la organización."); } finally { setSaving(false); }
   };
-  return <section className="entity-admin-page">
+  return <section className="entity-admin-page entity-admin-page--animated">
     <header className="entity-admin-heading"><div><span className="entity-admin-eyebrow">Administración global</span><h1>Organizaciones</h1><p>Gestiona las organizaciones y sus datos de contacto.</p></div><button type="button" className="secondary-button entity-refresh" onClick={() => void load()} disabled={loading}><RefreshCw size={16}/>Actualizar</button></header>
     {!isDev && <div className="dashboard-alert">La creación de organizaciones está reservada al rol Desarrollador. Como administrador de organización puedes crear conjuntos residenciales.</div>}
     {error && <div className="dashboard-alert">{error}</div>}{notice && <div className={`dashboard-alert ${notice.startsWith("Organización creada correctamente") ? "success" : "warning"}`}>{notice}</div>}

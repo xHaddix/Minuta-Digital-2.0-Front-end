@@ -65,7 +65,7 @@ export function ComplexesPage() {
     } catch (err) { setError(messageOf(err) || "No se pudo crear el conjunto residencial."); }
     finally { setSaving(false); }
   };
-  return <section className="entity-admin-page">
+  return <section className="entity-admin-page entity-admin-page--animated">
     <header className="entity-admin-heading"><div><span className="entity-admin-eyebrow">Administración de propiedades</span><h1>Conjuntos residenciales</h1><p>Registra conjuntos y asígnalos a su organización.</p></div><button type="button" className="secondary-button entity-refresh" onClick={() => void load()} disabled={loading}><RefreshCw size={16}/>Actualizar</button></header>
     {error && <div className="dashboard-alert">{error}</div>}{notice && <div className={`dashboard-alert ${notice.startsWith("Conjunto residencial creado") ? "success" : "warning"}`}>{notice}</div>}
     <div className="entity-admin-grid">
