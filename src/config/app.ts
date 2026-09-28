@@ -31,6 +31,7 @@ export const AUTH_ENDPOINTS = {
   organizations: "/organizations",
   residentialComplexes: "/residential-complexes",
   switchComplex: "/auth/switch-complex",
+  dataTreatmentConsent: "/auth/data-treatment-consent",
   users: "/users",
   apartments: "/apartments",
   residents: "/residents",

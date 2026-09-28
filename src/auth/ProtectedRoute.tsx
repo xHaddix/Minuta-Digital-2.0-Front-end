@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./useAuth";
 import { ContextSelectorModal } from "./ContextSelectorModal";
+import { DataTreatmentConsentGate } from "./DataTreatmentConsentGate";
+import { DATA_TREATMENT_POLICY_VERSION } from "../config/privacy";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -22,6 +24,23 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (requiresContextSelection) {
     return <ContextSelectorModal />;
+  }
+
+  const policyVersion =
+    session?.dataTreatmentPolicyVersion ?? DATA_TREATMENT_POLICY_VERSION;
+  const requiresDataTreatmentConsent =
+    !!session?.user &&
+    (session.user.dataTreatmentVersion !== policyVersion ||
+      !session.user.dataTreatmentAcceptedAt);
+
+  if (requiresDataTreatmentConsent) {
+    return (
+      <DataTreatmentConsentGate
+        version={policyVersion}
+        organizationName={session?.organizationName}
+        residentialComplexName={session?.residentialComplexName}
+      />
+    );
   }
 
   if (!hasActiveComplex()) {

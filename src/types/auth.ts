@@ -77,6 +77,8 @@ export interface BaseUser {
 /// Usado en el estado de sesión de AuthContext
 export interface UserSession extends BaseUser {
   roleName?: string;
+  dataTreatmentAcceptedAt?: string | null;
+  dataTreatmentVersion?: string | null;
 }
 
 // 4. AUTENTICACIÓN Y CONTEXTO MULTI-TENANT
@@ -92,6 +94,7 @@ export interface LoginResponse {
   accessToken: string;
   user: UserSession;
   permissions: PermissionCode[];
+  dataTreatmentPolicyVersion?: string;
 }
 
 export interface AuthState {
@@ -105,6 +108,7 @@ export interface AuthState {
   residentialComplexName?: string | null;
   roleCode: RoleCode | null;
   contextSelected?: boolean;
+  dataTreatmentPolicyVersion?: string;
 }
 
 export interface SwitchComplexRequest {
@@ -115,6 +119,13 @@ export interface SwitchComplexResponse {
   accessToken: string;
   permissions: PermissionCode[];
   user: UserSession;
+  dataTreatmentPolicyVersion?: string;
+}
+
+export interface DataTreatmentConsentResponse {
+  acceptedAt: string;
+  version: string;
+  policyVersion: string;
 }
 
 export interface ValidationErrorResponse {

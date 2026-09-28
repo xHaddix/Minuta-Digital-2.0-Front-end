@@ -14,13 +14,37 @@ const features = [
   "PQRS y solicitudes",
 ];
 
+const REMEMBERED_EMAIL_KEY = "minuta-digital-remembered-email";
+
+const loadRememberedEmail = () => {
+  try {
+    return window.localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? "";
+  } catch {
+    return "";
+  }
+};
+
+const saveRememberedEmail = (email: string | null) => {
+  try {
+    if (email) {
+      window.localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+    } else {
+      window.localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+    }
+  } catch {
+    // El inicio de sesión debe continuar aunque el navegador bloquee el almacenamiento.
+  }
+};
+
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(loadRememberedEmail);
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(
+    () => loadRememberedEmail() !== "",
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -46,6 +70,7 @@ export function LoginPage() {
 
     try {
       await login(trimmedEmail, trimmedPassword, rememberMe);
+      saveRememberedEmail(rememberMe ? trimmedEmail : null);
       const fromState = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)?.from;
       const savedPath = window.sessionStorage.getItem("minuta:redirect-after-login");
       const statePath = fromState?.pathname
@@ -144,6 +169,8 @@ export function LoginPage() {
               </span>
               <input
                 type="email"
+                name="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="example@domain.com"
@@ -156,6 +183,8 @@ export function LoginPage() {
               </span>
               <input
                 type={showPassword ? "text" : "password"}
+                name="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••••••"
@@ -182,7 +211,11 @@ export function LoginPage() {
                 <input
                   type="checkbox"
                   checked={rememberMe}
-                  onChange={(event) => setRememberMe(event.target.checked)}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setRememberMe(checked);
+                    if (!checked) saveRememberedEmail(null);
+                  }}
                 />
                 <span>Recordarme</span>
               </label>

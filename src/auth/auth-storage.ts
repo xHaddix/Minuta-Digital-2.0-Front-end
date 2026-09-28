@@ -60,7 +60,9 @@ const isAuthState = (value: unknown): value is AuthState => {
       isNullableString(value.residentialComplexName)) &&
     (value.roleCode === null || isRoleCode(value.roleCode)) &&
     (value.contextSelected === undefined ||
-      typeof value.contextSelected === "boolean")
+      typeof value.contextSelected === "boolean") &&
+    (value.dataTreatmentPolicyVersion === undefined ||
+      typeof value.dataTreatmentPolicyVersion === "string")
   );
 };
 
@@ -151,6 +153,7 @@ export const buildAuthState = (payload: {
   residentialComplexName?: string | null;
   roleCode?: AuthState["roleCode"];
   contextSelected?: boolean;
+  dataTreatmentPolicyVersion?: string;
 }): AuthState => {
   const jwtPayload = decodeJwtPayload(payload.accessToken);
 
@@ -180,5 +183,6 @@ export const buildAuthState = (payload: {
       null,
     contextSelected:
       payload.contextSelected ?? payload.residentialComplexId !== null,
+    dataTreatmentPolicyVersion: payload.dataTreatmentPolicyVersion,
   };
 };

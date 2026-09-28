@@ -3,9 +3,11 @@ import { APP_CONFIG } from "../config/app";
 import {
   login as loginRequest,
   switchComplex as switchComplexRequest,
+  acceptDataTreatmentConsent as acceptDataTreatmentConsentRequest,
 } from "../services/auth-service";
 import { setApiAccessToken } from "../services/api";
 import type { AuthState, PermissionCode, RoleCode } from "../types/auth";
+import { DATA_TREATMENT_POLICY_VERSION } from "../config/privacy";
 import {
   buildAuthState,
   clearStoredAuth,
@@ -160,6 +162,8 @@ export const useAuth = () => {
           : (data.user.residentialComplexId ?? null),
         roleCode: data.user.roleCode,
         contextSelected: !requiresContextSelection,
+        dataTreatmentPolicyVersion:
+          data.dataTreatmentPolicyVersion ?? DATA_TREATMENT_POLICY_VERSION,
       });
 
       setStoredAuthWithPreference(auth, rememberMe);
@@ -208,6 +212,10 @@ export const useAuth = () => {
           null,
         roleCode: auth.roleCode ?? auth.user?.roleCode ?? null,
         contextSelected: true,
+        dataTreatmentPolicyVersion:
+          data.dataTreatmentPolicyVersion ??
+          auth.dataTreatmentPolicyVersion ??
+          DATA_TREATMENT_POLICY_VERSION,
       });
 
       setStoredAuthWithPreference(nextAuth, isAuthRemembered());
@@ -235,6 +243,28 @@ export const useAuth = () => {
     };
     setStoredAuthWithPreference(nextAuth, isAuthRemembered());
     setSession(nextAuth);
+  }, []);
+
+  const acceptDataTreatmentConsent = useCallback(async (version: string) => {
+    const auth = getStoredAuth();
+    if (!auth?.accessToken || !auth.user) {
+      throw new Error("No hay una sesion activa para registrar la aceptacion.");
+    }
+
+    const result = await acceptDataTreatmentConsentRequest(version);
+    const nextAuth: AuthState = {
+      ...auth,
+      dataTreatmentPolicyVersion: result.policyVersion,
+      user: {
+        ...auth.user,
+        dataTreatmentAcceptedAt: result.acceptedAt,
+        dataTreatmentVersion: result.version,
+      },
+    };
+
+    setStoredAuthWithPreference(nextAuth, isAuthRemembered());
+    setSession(nextAuth);
+    return nextAuth;
   }, []);
 
   const can = useCallback(
@@ -276,6 +306,7 @@ export const useAuth = () => {
     login,
     switchComplex,
     setProfileName,
+    acceptDataTreatmentConsent,
     logout,
     can,
     canAny,

@@ -149,7 +149,7 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="dashboard-view">
+    <div className="dashboard-view dashboard-page">
       <div className="dashboard-grid">
         {visibleMetrics.map((card) => (
           <article key={card.title} className="metric-card">

@@ -3,6 +3,7 @@ import api, { setApiAccessToken } from "./api";
 import { AUTH_ENDPOINTS } from "../config/app";
 import type {
   LoginResponse,
+  DataTreatmentConsentResponse,
   SwitchComplexRequest,
   SwitchComplexResponse,
 } from "../types/auth";
@@ -56,5 +57,15 @@ export const switchComplex = async (
   );
 
   setApiAccessToken(response.data.accessToken);
+  return response.data;
+};
+
+export const acceptDataTreatmentConsent = async (
+  version: string,
+): Promise<DataTreatmentConsentResponse> => {
+  const response = await api.post<DataTreatmentConsentResponse>(
+    AUTH_ENDPOINTS.dataTreatmentConsent,
+    { version },
+  );
   return response.data;
 };
