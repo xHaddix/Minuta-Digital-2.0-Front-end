@@ -10,6 +10,13 @@ import { EditIcon } from "../../components/icons/EditIcon";
 import { TrashIcon } from "../../components/icons/TrashIcon";
 import { AvatarImage } from "../../components/ui/AvatarImage";
 
+const ADMINISTRATOR_ROLE_CODES = new Set([
+  "ROLE_DEV",
+  "ROLE_ORG_ADMIN",
+  "ROLE_COMPLEX_ADMIN",
+]);
+const ADMINISTRATORS_FILTER = "__ADMINISTRATORS__";
+
 export const UsersPage: React.FC = () => {
   const { session } = useAuth();
   const currentUser = session?.user;
@@ -110,16 +117,27 @@ export const UsersPage: React.FC = () => {
     const options: SelectOption[] = [
       { value: "ALL", label: "Todos los roles" },
     ];
+    if (currentUserRoleCode === "ROLE_DEV") {
+      options.push({
+        value: ADMINISTRATORS_FILTER,
+        label: "Administradores",
+      });
+    }
     rolesMap.forEach((name, id) => {
       options.push({ value: id, label: name });
     });
 
     return options;
-  }, [contextUsers]);
+  }, [contextUsers, currentUserRoleCode]);
 
   // Lista filtrada por rol
   const filteredUsers = useMemo(() => {
     if (selectedRoleFilter === "ALL") return contextUsers;
+    if (selectedRoleFilter === ADMINISTRATORS_FILTER) {
+      return contextUsers.filter((user) =>
+        ADMINISTRATOR_ROLE_CODES.has(user.role?.code ?? ""),
+      );
+    }
     return contextUsers.filter((u) => u.role?.id === selectedRoleFilter);
   }, [contextUsers, selectedRoleFilter]);
 

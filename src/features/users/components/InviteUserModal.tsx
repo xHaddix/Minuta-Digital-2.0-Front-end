@@ -56,6 +56,13 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
   const isGlobalRole =
     currentUserRoleCode === "ROLE_DEV" ||
     currentUserRoleCode === "ROLE_ORG_ADMIN";
+  const selectedRole = roles.find((role) => role.id === formData.roleId);
+  const selectedRoleCode = selectedRole?.code;
+  const selectedRoleNeedsComplex = [
+    "ROLE_COMPLEX_ADMIN",
+    "ROLE_SECURITY",
+    "ROLE_RESIDENT",
+  ].includes(selectedRoleCode ?? "");
 
   useEffect(() => {
     if (!isOpen) {
@@ -120,16 +127,17 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
         ...(formData.documentNumber?.trim() && {
           documentNumber: formData.documentNumber.trim(),
         }),
-        ...((formData.residentialComplexId || currentResidentialComplexId) && {
+        ...(selectedRoleNeedsComplex &&
+          (formData.residentialComplexId || currentResidentialComplexId) && {
           residentialComplexId: formData.residentialComplexId || currentResidentialComplexId || undefined,
-        }),
-        ...(formData.organizationId && {
+          }),
+        ...(selectedRoleCode === "ROLE_ORG_ADMIN" && formData.organizationId && {
           organizationId: formData.organizationId,
         }),
       };
 
       const invitation = await inviteUser(payload);
-      const assignedRole = roles.find((role) => role.id === formData.roleId);
+      const assignedRole = selectedRole;
       const targetComplexId = formData.residentialComplexId || currentResidentialComplexId;
       if (avatarFile && invitation.user?.id && targetComplexId &&
           ["ROLE_COMPLEX_ADMIN", "ROLE_SECURITY", "ROLE_RESIDENT"].includes(assignedRole?.code ?? "")) {
@@ -250,7 +258,14 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
               <CustomSelect
                 options={roleOptions}
                 value={formData.roleId}
-                onChange={(val) => setFormData({ ...formData, roleId: val })}
+                onChange={(val) =>
+                  setFormData((current) => ({
+                    ...current,
+                    roleId: val,
+                    residentialComplexId: "",
+                    organizationId: "",
+                  }))
+                }
                 placeholder="Seleccione un rol"
               />
             </div>
@@ -261,14 +276,14 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
               <ImageUploadField name={formData.name || "usuario"} onChange={setAvatarFile} disabled={submitting || Boolean(successMessage)} />
             )}
 
-            {isGlobalRole && (
+            {isGlobalRole && selectedRoleNeedsComplex && (
               <div className="form-group">
                 <label>Conjunto Residencial</label>
                 <CustomSelect
                   options={complexOptions}
                   value={formData.residentialComplexId || ""}
                   onChange={(val) =>
-                    setFormData({ ...formData, residentialComplexId: val })
+                    setFormData((current) => ({ ...current, residentialComplexId: val }))
                   }
                   placeholder="Seleccione un conjunto"
                 />
@@ -301,7 +316,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
             </div>
 
             <div
-              className="modal-actions"
+              className="modal-actions invite-user-modal-actions"
               style={{
                 marginTop: "1.5rem",
                 display: "flex",

@@ -21,8 +21,8 @@ export const CustomSelect: React.FC<SelectProps> = ({
   onChange,
   placeholder = "Seleccionar...",
   disabled = false,
-  searchable = false,
-  searchPlaceholder = "Buscar...",
+  searchable = true,
+  searchPlaceholder = "Buscar opción...",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,8 +56,14 @@ export const CustomSelect: React.FC<SelectProps> = ({
   // Filtrado de opciones en memoria según el término ingresado
   const filteredOptions = useMemo(() => {
     if (!searchable || !searchTerm.trim()) return options;
+    const normalize = (text: string) =>
+      text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLocaleLowerCase();
+    const normalizedSearch = normalize(searchTerm.trim());
     return options.filter((opt) =>
-      opt.label.toLowerCase().includes(searchTerm.toLowerCase().trim()),
+      normalize(opt.label).includes(normalizedSearch),
     );
   }, [options, searchable, searchTerm]);
 
@@ -88,6 +94,7 @@ export const CustomSelect: React.FC<SelectProps> = ({
                 type="text"
                 className="custom-select-search-input"
                 placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onClick={(e) => e.stopPropagation()}

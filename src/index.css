@@ -573,7 +573,7 @@ a {
   border: 1px solid #334155;
   border-radius: 0.75rem;
   width: 100%;
-  max-width: 540px;
+  max-width: 500px;
   max-height: 90vh;
   padding: 1.75rem;
   box-shadow:
@@ -737,7 +737,8 @@ a {
 @media (max-width: 640px) {
   .modal-content {
     padding: 1.25rem;
-    max-width: 100%;
+    width: min(100%, 500px);
+    max-width: 500px;
   }
 
   .modal-actions {
