@@ -9,13 +9,10 @@ import { CheckIcon } from "../../components/icons/CheckIcon";
 import { EditIcon } from "../../components/icons/EditIcon";
 import { TrashIcon } from "../../components/icons/TrashIcon";
 import { AvatarImage } from "../../components/ui/AvatarImage";
-
-const ADMINISTRATOR_ROLE_CODES = new Set([
-  "ROLE_DEV",
-  "ROLE_ORG_ADMIN",
-  "ROLE_COMPLEX_ADMIN",
-]);
-const ADMINISTRATORS_FILTER = "__ADMINISTRATORS__";
+import {
+  ADMINISTRATORS_FILTER,
+  filterUsers,
+} from "./user-filter.mjs";
 
 export const UsersPage: React.FC = () => {
   const { session } = useAuth();
@@ -132,14 +129,8 @@ export const UsersPage: React.FC = () => {
 
   // Lista filtrada por rol
   const filteredUsers = useMemo(() => {
-    if (selectedRoleFilter === "ALL") return contextUsers;
-    if (selectedRoleFilter === ADMINISTRATORS_FILTER) {
-      return contextUsers.filter((user) =>
-        ADMINISTRATOR_ROLE_CODES.has(user.role?.code ?? ""),
-      );
-    }
-    return contextUsers.filter((u) => u.role?.id === selectedRoleFilter);
-  }, [contextUsers, selectedRoleFilter]);
+    return filterUsers(users, selectedRoleFilter, activeComplexId);
+  }, [users, selectedRoleFilter, activeComplexId]);
 
   const renderStatusBadge = (status: number) => {
     switch (status) {

@@ -163,7 +163,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
 
   return (
     <div className="modal-backdrop">
-      <div className="modal-content overflow-visible">
+      <div className="modal-content overflow-visible edit-user-modal">
         <h2>Editar Usuario</h2>
 
         {error && <div className="dashboard-alert">{error}</div>}
